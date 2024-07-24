@@ -5,7 +5,7 @@ export interface IWebSocketCommand {
   // message params
   jsonrpc: '2.0'
   method: string
-  params: string[] // TODO: only strings ?
+  params: any[] // TODO: only strings ?
 
   // internal
   id: string // uuid
@@ -21,7 +21,7 @@ export class WebSocketCommand implements IWebSocketCommand {
   // message params
   jsonrpc: "2.0" = "2.0"
   method: string = ''
-  params: string[] = []
+  params: any[] = []
 
   // internal
   id: string

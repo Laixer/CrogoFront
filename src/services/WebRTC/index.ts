@@ -1,7 +1,6 @@
 
-
-import { getWebSocketConnection, isWebSocketConnectionAvailable, sendCommand } from "../websocket";
-import { RTCSetupCommand } from "../websocket/commands/setup";
+import { sendCommand as sendWebsocketCommand } from "../websocket";
+import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setup";
 import type { ICommand } from "./commands";
 
 const configuration: RTCConfiguration = {
@@ -12,6 +11,7 @@ const configuration: RTCConfiguration = {
 }
 
 let WebRTCConnection: RTCPeerConnection|null = null
+let CommandChannel: RTCDataChannel|null = null
 
 export const getWebRTCConnection = function getWebRTCConnection(): RTCPeerConnection|null {
   return WebRTCConnection
@@ -28,11 +28,21 @@ export const initiateRTCConnection = function initiateRTCConnection() {
   // TODO: Leverage video.ts
   WebRTCConnection.addTransceiver('video', { direction: 'recvonly' })
 
-  WebRTCConnection.onicegatheringstatechange = onicegatheringstatechange
+  // create the command channel
+  CommandChannel = WebRTCConnection.createDataChannel("command")
+  CommandChannel.onmessage = onReceiveMessage
 
-  WebRTCConnection.createOffer().then(offer => {
-    WebRTCConnection && WebRTCConnection.setLocalDescription(offer)
-  })
+  // Establishing the connection
+  WebRTCConnection.onicecandidate = onicecandidate
+  WebRTCConnection.createOffer()
+    .then(offer => {
+      WebRTCConnection && WebRTCConnection.setLocalDescription(offer)
+      
+      // Setup RTC through the websocket connection
+      sendWebsocketCommand(
+        new RTCSetupCommand(offer)
+      )
+    })
 }
 
 
@@ -47,50 +57,31 @@ export const send = function send(command: ICommand) {
 }
 
 /**
- * Handle gathering state changes
+ * Handle incremental connection events
+ *  TODO: Handle situations after initial stable connection has been established (e.g. moving to another wifi area)
  */
-const onicegatheringstatechange = function onicegatheringstatechange(ev: Event) {
-  const connection = ev.target as RTCPeerConnection;
-
-  switch (connection.iceGatheringState) {
-    case "gathering":
-      console.log("WebRTC - ICE gathering state change: gathering");
-      break;
-
-    case "complete":
-      console.log("WebRTC - ICE gathering state change: complete");
-      console.log(WebRTCConnection?.localDescription)
-
-      // Setup RTC through the websocket connection
-      sendCommand(
-        new RTCSetupCommand([
-          WebRTCConnection?.localDescription?.sdp || ''
-        ])
-      )
-      break;
+const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent) {
+  if (event.candidate === null) {
+    return
   }
+
+  // Setup RTC through the websocket connection
+  sendWebsocketCommand(
+    new RTCCandidateCommand(event.candidate)
+  )
 }
 
-
-// TODO: No longer necessary ??
-// export const createWebRTCOffer = function createWebRTCOffer() {
-//   const WebRTC = getWebRTCConnection()
-
-//   if (WebRTC === null) {
-//     console.error("WebRTC - Missing WebRTC instance while trying to create an offer")
-//     return
-//   }
-
-//   // TODO: Emit signal that connection is opened (to show in the DOM)? Or after remote description ... ?
-//   WebRTC.createOffer().then(offer => {
-//     WebRTC.setLocalDescription(offer)
-//   })
-// }
+/**
+ * On receiving a data message from the command channel
+ */
+const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
+  console.log(event)
+}
 
 /**
  * Used by the Websocket RTCSetupCommand to establish the RTC connection
  */
-export const setRemoteDescription = function setRemoteDescription(sdp: string) {
+export const setRemoteDescription = function setRemoteDescription(description: RTCSessionDescription) {
   const WebRTC = getWebRTCConnection()
 
   if (WebRTC === null) {
@@ -98,8 +89,5 @@ export const setRemoteDescription = function setRemoteDescription(sdp: string) {
     return
   }
 
-  WebRTC.setRemoteDescription({ 
-    sdp, 
-    'type': 'answer' 
-  })
+  WebRTC.setRemoteDescription(description)
 }
