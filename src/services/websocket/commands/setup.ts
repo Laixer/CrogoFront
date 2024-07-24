@@ -1,6 +1,7 @@
 import { setRemoteDescription } from "@/services/WebRTC"
 import { WebSocketCommand } from "."
 
+const volvo = false
 
 /**
  * Websocket command to start the setup of the RTC connection
@@ -20,11 +21,18 @@ export class RTCSetupCommand extends WebSocketCommand {
       },
       offer
     ]
-    this.handler = this.handleMessage
+
+    // Volvo
+    this.params = volvo ? [ offer.sdp ] : this.params
+    this.handler = volvo ? this.handleVolVoMessage : this.handleMessage
   }
 
   handleMessage(message: { result: RTCSessionDescription }) {
     setRemoteDescription(message.result)
+  }
+
+  handleVolVoMessage(message: { result: string } ) {
+    new RTCSessionDescription( { sdp: message.result, type: 'answer' })
   }
 }
 
@@ -44,8 +52,8 @@ export class RTCCandidateCommand extends WebSocketCommand {
   }
 
   
-  handleMessage(message: null) {
-    if (message !== null) {
+  handleMessage(message: { result: null }) {
+    if (message.result !== null) {
       console.error("RTCCandidateCommand - Error", message)
     }
   }

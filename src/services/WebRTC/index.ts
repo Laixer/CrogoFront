@@ -34,10 +34,19 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
   // Establishing the connection
   WebRTCConnection.onicecandidate = onicecandidate
+  console.log("WebRTC - Creating offer")
+  // WebRTCConnection.onicegatheringstatechange = onicegatheringstatechange
+
   WebRTCConnection.createOffer()
-    .then(offer => {
-      WebRTCConnection && WebRTCConnection.setLocalDescription(offer)
+    .then(async (offer) => {
+      if (! WebRTCConnection) {
+        return // Because TS...
+      }
+      console.log("WebRTC - Created offer", offer)
+      await WebRTCConnection.setLocalDescription(offer)
       
+      console.log("WebRTC - local description", WebRTCConnection?.localDescription)
+
       // Setup RTC through the websocket connection
       sendWebsocketCommand(
         new RTCSetupCommand(offer)
@@ -61,6 +70,8 @@ export const send = function send(command: ICommand) {
  *  TODO: Handle situations after initial stable connection has been established (e.g. moving to another wifi area)
  */
 const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent) {
+  console.log("WebRTC - ice candidate", event.candidate)
+
   if (event.candidate === null) {
     return
   }
@@ -70,6 +81,26 @@ const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent)
     new RTCCandidateCommand(event.candidate)
   )
 }
+
+// const onicegatheringstatechange = function onicegatheringstatechange(event: Event) {
+//   let connection = event.target;
+
+//   // @ts-ignore - quick test. method is to be removed
+//   if (connection.iceGatheringState === 'complete') {
+//     if (WebRTCConnection === null) {
+//       console.error("WebRTC - does not compute") // TS being TS
+//       return 
+//     }
+  
+//     if (WebRTCConnection.localDescription === null) {
+//       console.error("WebRTC - A local description is required to setup a connection")
+//       return
+//     }
+//     sendWebsocketCommand(
+//       new RTCSetupCommand(WebRTCConnection?.localDescription)
+//     )
+//   }
+// }
 
 /**
  * On receiving a data message from the command channel
@@ -82,6 +113,9 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
  * Used by the Websocket RTCSetupCommand to establish the RTC connection
  */
 export const setRemoteDescription = function setRemoteDescription(description: RTCSessionDescription) {
+  
+  console.log("WebRTC - setting remote description")
+
   const WebRTC = getWebRTCConnection()
 
   if (WebRTC === null) {
