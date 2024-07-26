@@ -66,11 +66,16 @@ export const send = function send(message: IMessage) {
     console.error("WebRTC - not connected") // TODO: Throw Exception
   }
 
+  // TODO: Refactor this
   const messageBuffer = message.toBytes()
   const frame = new Frame(message.messageType, messageBuffer.byteLength)
   const frameBuffer = frame.toBytes()
 
-  // NOTE: Sending the frame header and message separately has proven unreliable in the past
+  // NOTE: Sending the frame header and message separately has proven unreliable in the past.
+  //       Bind all data into a single buffer, and send it all at once. Some routers or firewalls may fragment the data
+  //       otherwise. We have seen this happen more than once.
+  // NOTE: At the time of writing, this has not been tested with the current implementation.
+
   // Send the frame header
   CommandChannel?.send(frameBuffer)
   // Send the message
@@ -122,29 +127,34 @@ const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent)
 const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
   // console.log(event.data)
 
+  // TODO: Check that we have received a full frame AND its payload. This essentially means the array buffer is at least 10+1 bytes long
+
   const frame = Frame.fromBytes(event.data)
   console.log(frame)
 
   switch (frame.messageType) {
     case MessageType.STATUS:
-      const moduleStatus = ModuleStatus.fromBytes(event.data.slice(10))
+      const moduleStatus = ModuleStatus.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       console.log(moduleStatus)
       break
     case MessageType.ENGINE:
-      const engine = Engine.fromBytes(event.data.slice(10))
+      const engine = Engine.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       console.log(engine)
       break
     case MessageType.CONTROL:
-      const control = Control.fromBytes(event.data.slice(10))
+      const control = Control.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       console.log(control)
       break
     case MessageType.MOTION:
+      // TODO: Implement...
       console.log("WebRTC - received motion message")
       break
     case MessageType.ROTATOR:
+      // TODO: Implement...
       console.log("WebRTC - received rotator message")
       break
     case MessageType.ACTOR:
+      // TODO: Implement...
       console.log("WebRTC - received actor message")
       break
     default:

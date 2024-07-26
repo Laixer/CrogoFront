@@ -1,6 +1,7 @@
 import { initiateRTCConnection, send } from '@/services/WebRTC/index.js';
 import { establishWebSocketConnection } from '@/services/websocket/index.js';
 import { Engine } from './WebRTC/commands/engine';
+import { Control, ControlType } from './WebRTC/commands/controls';
 
 let isConnected = false
 
@@ -33,7 +34,7 @@ export const stopAllMotion = function () {
     console.error("Cargo - Trying to stop motion without active connection")
   }
 
-  // TODO: As yet, the command is not implemented
+  // TODO: As yet, Motion is not implemented
   // send(new MotionStopAllCommand())
 }
 
@@ -55,6 +56,18 @@ export const engineRequestRPM = function (rpm: number) {
   }
 
   send(Engine.request_rpm(rpm))
+}
+
+export const controlLights = function (on: boolean) {
+
+  if (!isConnected) {
+    // Note: still trying, due to importance of command 
+    console.error("Cargo - Trying to stop motion without active connection")
+  }
+
+  // TODO: We may want to wrap this into a ControlMethod or similar 
+  send(new Control(ControlType.MACHINE_LIGHTS, on))
+
 }
 
 export default {

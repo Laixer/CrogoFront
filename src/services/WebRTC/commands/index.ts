@@ -73,7 +73,7 @@ export class Frame {
     }
 
     // Get message type
-    const messageType = dataView.getUint8(4);
+    const messageType = dataView.getUint8(4) as MessageType;
 
     // Get message length (big-endian 16-bit unsigned integer)
     const messageLength = dataView.getUint16(5, false); // false for big-endian
@@ -83,7 +83,6 @@ export class Frame {
       throw new Error("Invalid header padding");
     }
 
-    // The full frame is already contained in the arrayBuffer
     return new Frame(messageType, messageLength);
   }
 
