@@ -1,33 +1,22 @@
 /**
- * Constants for the GLONAX protocol.
+ * Size of the GLONAX protocol header in bytes.
  */
 const GLONAX_PROTOCOL_HEADER_SIZE = 10;
 /**
  * Magic header value for the GLONAX protocol.
  */
 const GLONAX_PROTOCOL_HEADER_MAGIC = "LXR";
+/**
+ * Version of the GLONAX protocol.
+ */
 const GLONAX_PROTOCOL_VERSION = 0x03;
 
 /**
- * Base command 
+ * Message interface
  */
-export interface ICommand {
-  type: 'command',
-  topic: string,
-  payload: object
-}
-
-export class Command implements ICommand {
-  type: 'command' = 'command'
-
-  topic: string = ''
-  payload: object = {}
-
-}
-
 export interface IMessage {
   messageType: MessageType,
-  payload: object
+  toBytes(): ArrayBuffer
 }
 
 /**

@@ -1,3 +1,5 @@
+import { MessageType, type IMessage } from "."
+
 /******************************************************************************
  * Controls
  */
@@ -16,7 +18,9 @@ export enum ControlType {
   MACHINE_TRAVEL_ALARM = 0x20
 }
 
-export class Control {
+export class Control implements IMessage {
+  messageType = MessageType.CONTROL
+
   type: ControlType
   value: boolean
 

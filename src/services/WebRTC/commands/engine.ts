@@ -1,3 +1,5 @@
+import { MessageType, type IMessage } from "."
+
 /******************************************************************************
  * Engine
  */
@@ -8,7 +10,9 @@ export enum EngineState {
   REQUEST = 0x10
 }
 
-export class Engine {
+export class Engine implements IMessage {
+  messageType = MessageType.ENGINE
+
   driver_demand: number
   actual_engine: number
   rpm: number

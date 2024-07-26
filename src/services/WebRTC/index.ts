@@ -3,7 +3,7 @@ import { sendCommand as sendWebsocketCommand } from "../websocket";
 import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setup";
 
 // FUTURE: WIP: TODO
-import { Frame, MessageType, type ICommand } from "./commands";
+import { Frame, MessageType, type IMessage } from "./commands";
 import { Control } from "./commands/controls";
 import { Engine } from "./commands/engine";
 import { ModuleStatus } from "./commands/status";
@@ -61,11 +61,20 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
 
 // TODO: Actually send the command over the connection 
-export const send = function send(command: ICommand) {
+export const send = function send(message: IMessage) {
   if (!isConnected()) {
     console.error("WebRTC - not connected") // TODO: Throw Exception
   }
-  console.log(command)
+
+  const messageBuffer = message.toBytes()
+  const frame = new Frame(message.messageType, messageBuffer.byteLength)
+  const frameBuffer = frame.toBytes()
+
+  // NOTE: Sending the frame header and message separately has proven unreliable in the past
+  // Send the frame header
+  CommandChannel?.send(frameBuffer)
+  // Send the message
+  CommandChannel?.send(messageBuffer)
 
   // ...
 }

@@ -1,7 +1,11 @@
+import { MessageType, type IMessage } from "."
+
 /******************************************************************************
  * Module status
  */
-export class ModuleStatus {
+export class ModuleStatus implements IMessage {
+  messageType = MessageType.STATUS
+
   name: string
   state: number // TODO: Enum
   error_code: number // TODO: Enum

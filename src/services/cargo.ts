@@ -1,9 +1,6 @@
-
-
 import { initiateRTCConnection, send } from '@/services/WebRTC/index.js';
 import { establishWebSocketConnection } from '@/services/websocket/index.js';
-import { MotionStopAllCommand } from './WebRTC/commands/motion';
-
+import { Engine } from './WebRTC/commands/engine';
 
 let isConnected = false
 
@@ -17,7 +14,7 @@ export const connect = function connect(uuid: string) {
 
   // initiateRTCConnection()
   establishWebSocketConnection({
-    instanceId: uuid, 
+    instanceId: uuid,
     onOpen: initiateRTCConnection
   })
 
@@ -29,17 +26,36 @@ export const connect = function connect(uuid: string) {
 }
 
 
-export const stopAllMotion = function() {
+export const stopAllMotion = function () {
 
-  if (! isConnected) {
+  if (!isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to stop motion without active connection")
   }
 
-  send(new MotionStopAllCommand())
+  // TODO: As yet, the command is not implemented
+  // send(new MotionStopAllCommand())
 }
 
+export const engineShutdown = function () {
 
+  if (!isConnected) {
+    // Note: still trying, due to importance of command 
+    console.error("Cargo - Trying to stop motion without active connection")
+  }
+
+  send(Engine.shutdown())
+}
+
+export const engineRequestRPM = function (rpm: number) {
+
+  if (!isConnected) {
+    // Note: still trying, due to importance of command 
+    console.error("Cargo - Trying to stop motion without active connection")
+  }
+
+  send(Engine.request_rpm(rpm))
+}
 
 export default {
   connect,
