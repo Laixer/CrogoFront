@@ -1,7 +1,12 @@
 
 import { sendCommand as sendWebsocketCommand } from "../websocket";
 import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setup";
-import type { ICommand } from "./commands";
+
+// FUTURE: WIP: TODO
+import { Frame, MessageType, type ICommand } from "./commands";
+import { Control } from "./commands/controls";
+import { Engine } from "./commands/engine";
+import { ModuleStatus } from "./commands/status";
 
 const configuration: RTCConfiguration = {
   bundlePolicy: "max-bundle",
@@ -106,7 +111,36 @@ const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent)
  * On receiving a data message from the command channel
  */
 const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
-  console.log(event)
+  // console.log(event.data)
+
+  const frame = Frame.fromBytes(event.data)
+  console.log(frame)
+
+  switch (frame.messageType) {
+    case MessageType.STATUS:
+      const moduleStatus = ModuleStatus.fromBytes(event.data.slice(10))
+      console.log(moduleStatus)
+      break
+    case MessageType.ENGINE:
+      const engine = Engine.fromBytes(event.data.slice(10))
+      console.log(engine)
+      break
+    case MessageType.CONTROL:
+      const control = Control.fromBytes(event.data.slice(10))
+      console.log(control)
+      break
+    case MessageType.MOTION:
+      console.log("WebRTC - received motion message")
+      break
+    case MessageType.ROTATOR:
+      console.log("WebRTC - received rotator message")
+      break
+    case MessageType.ACTOR:
+      console.log("WebRTC - received actor message")
+      break
+    default:
+      console.log("WebRTC - received unknown message")
+  }
 }
 
 /**
