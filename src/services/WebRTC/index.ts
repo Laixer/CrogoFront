@@ -4,16 +4,16 @@ import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setu
 import type { ICommand } from "./commands";
 
 const configuration: RTCConfiguration = {
-  bundlePolicy: "max-bundle", 
+  bundlePolicy: "max-bundle",
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
   ],
 }
 
-let WebRTCConnection: RTCPeerConnection|null = null
-let CommandChannel: RTCDataChannel|null = null
+let WebRTCConnection: RTCPeerConnection | null = null
+let CommandChannel: RTCDataChannel | null = null
 
-export const getWebRTCConnection = function getWebRTCConnection(): RTCPeerConnection|null {
+export const getWebRTCConnection = function getWebRTCConnection(): RTCPeerConnection | null {
   return WebRTCConnection
 }
 
@@ -39,12 +39,12 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
   WebRTCConnection.createOffer()
     .then(async (offer) => {
-      if (! WebRTCConnection) {
+      if (!WebRTCConnection) {
         return // Because TS...
       }
       console.log("WebRTC - Created offer", offer)
       await WebRTCConnection.setLocalDescription(offer)
-      
+
       console.log("WebRTC - local description", WebRTCConnection?.localDescription)
 
       // Setup RTC through the websocket connection
@@ -57,7 +57,7 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
 // TODO: Actually send the command over the connection 
 export const send = function send(command: ICommand) {
-  if (! isConnected()) {
+  if (!isConnected()) {
     console.error("WebRTC - not connected") // TODO: Throw Exception
   }
   console.log(command)
@@ -91,7 +91,7 @@ const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent)
 //       console.error("WebRTC - does not compute") // TS being TS
 //       return 
 //     }
-  
+
 //     if (WebRTCConnection.localDescription === null) {
 //       console.error("WebRTC - A local description is required to setup a connection")
 //       return
@@ -113,7 +113,7 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
  * Used by the Websocket RTCSetupCommand to establish the RTC connection
  */
 export const setRemoteDescription = function setRemoteDescription(description: RTCSessionDescription) {
-  
+
   console.log("WebRTC - setting remote description")
 
   const WebRTC = getWebRTCConnection()

@@ -34,22 +34,22 @@ export interface IMessage {
  * Message type
  */
 export enum MessageType {
-  ERROR = 0x00,
-  ECHO = 0x01,
-  SESSION = 0x10,
-  SHUTDOWN = 0x11,
-  REQUEST = 0x12,
-  INSTANCE = 0x15,
-  STATUS = 0x16,
-  MOTION = 0x20,
-  SIGNAL = 0x31,
-  ACTOR = 0x40,
-  VMS = 0x41,
-  GNSS = 0x42,
-  ENGINE = 0x43,
-  TARGET = 0x44,
-  CONTROL = 0x45,
-  ROTATOR = 0x46
+  ERROR = 0x00,     // Future use
+  ECHO = 0x01,      // Robot -> Operator, Operator -> Robot
+  SESSION = 0x10,   // Handled by glonax-agent
+  SHUTDOWN = 0x11,  // Deprecated
+  REQUEST = 0x12,   // Deprecated
+  INSTANCE = 0x15,  // Handled by glonax-agent
+  STATUS = 0x16,    // Robot -> Operator
+  MOTION = 0x20,    // Robot -> Operator, Operator -> Robot
+  SIGNAL = 0x31,    // Deprecated
+  ACTOR = 0x40,     // Robot -> Operator
+  VMS = 0x41,       // Deprecated
+  GNSS = 0x42,      // Future use
+  ENGINE = 0x43,    // Robot -> Operator, Operator -> Robot
+  TARGET = 0x44,    // Operator -> Robot
+  CONTROL = 0x45,   // Operator -> Robot, Robot -> Operator
+  ROTATOR = 0x46    // Robot -> Operator
 }
 
 /**
