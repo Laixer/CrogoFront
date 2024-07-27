@@ -3,7 +3,7 @@ import { sendCommand as sendWebsocketCommand } from "../websocket";
 import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setup";
 
 // FUTURE: WIP: TODO
-import { Frame, MessageType, type IMessage } from "./commands";
+import { Frame, GLONAX_PROTOCOL_HEADER_SIZE, MessageType, type IMessage } from "./commands";
 import { Control } from "./commands/controls";
 import { Engine } from "./commands/engine";
 import { ModuleStatus } from "./commands/status";
@@ -60,28 +60,25 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 }
 
 
-// TODO: Actually send the command over the connection 
 export const send = function send(message: IMessage) {
   if (!isConnected()) {
     console.error("WebRTC - not connected") // TODO: Throw Exception
   }
 
-  // TODO: Refactor this
   const messageBuffer = message.toBytes()
   const frame = new Frame(message.messageType, messageBuffer.byteLength)
   const frameBuffer = frame.toBytes()
 
-  // NOTE: Sending the frame header and message separately has proven unreliable in the past.
-  //       Bind all data into a single buffer, and send it all at once. Some routers or firewalls may fragment the data
-  //       otherwise. We have seen this happen more than once.
-  // NOTE: At the time of writing, this has not been tested with the current implementation.
+  /**
+   * Combine the 2 buffers into 1 buffer
+   *  Sending them separate will cause processing issues at the receiving end
+   */
+  const commandBuffer = new ArrayBuffer(GLONAX_PROTOCOL_HEADER_SIZE + messageBuffer.byteLength)
+  const combinedBuffer = new Uint8Array(commandBuffer)
+  combinedBuffer.set(new Uint8Array(frameBuffer), 0)
+  combinedBuffer.set(new Uint8Array(messageBuffer), GLONAX_PROTOCOL_HEADER_SIZE)
 
-  // Send the frame header
-  CommandChannel?.send(frameBuffer)
-  // Send the message
-  CommandChannel?.send(messageBuffer)
-
-  // ...
+  CommandChannel?.send(commandBuffer)
 }
 
 /**
