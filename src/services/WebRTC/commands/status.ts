@@ -3,14 +3,30 @@ import { MessageType, type IMessage } from "."
 /******************************************************************************
  * Module status
  */
+export enum ModuleState {
+  Healthy = 0xF8,
+  Degraded = 0xF9,
+  Faulty = 0xFA,
+  Emergency = 0xFB,
+}
+
+// TODO: Values can change in the future
+export enum ModuleError {
+  InvalidConfiguration = 0,
+  VersionMismatch = 1,
+  CommunicationTimeout = 2,
+  GenericCommunicationError = 3,
+  IOError = 4,
+}
+
 export class ModuleStatus implements IMessage {
   messageType = MessageType.STATUS
 
   name: string
-  state: number // TODO: Enum
-  error_code: number // TODO: Enum
+  state: ModuleState
+  error_code: ModuleError
 
-  constructor(name: string, state: number, error_code: number) {
+  constructor(name: string, state: ModuleState, error_code: ModuleError) {
     this.name = name
     this.state = state
     this.error_code = error_code
@@ -22,8 +38,8 @@ export class ModuleStatus implements IMessage {
     const nameLength = dataView.getUint16(0, false)
     const name = new TextDecoder().decode(new Uint8Array(data, 2, nameLength))
 
-    const state = dataView.getUint8(2 + nameLength)
-    const errorCode = dataView.getUint8(3 + nameLength)
+    const state = dataView.getUint8(2 + nameLength) as ModuleState
+    const errorCode = dataView.getUint8(3 + nameLength) as ModuleError
 
     return new ModuleStatus(name, state, errorCode)
   }
