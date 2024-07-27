@@ -93,14 +93,14 @@ export class Motion implements IMessage {
 
       return buffer
     } else if (this.change) {
-      const buffer = new ArrayBuffer(2 + this.change.length * 3)
+      const buffer = new ArrayBuffer(2 + this.change.length * 4)
       const dataView = new DataView(buffer)
 
       dataView.setUint8(0, this.type)
       dataView.setUint8(1, this.change.length)
       this.change.forEach((change, i) => {
-        dataView.setUint8(2 + i * 3, change.actuator)
-        dataView.setInt16(3 + i * 3, change.value, false)
+        dataView.setUint16(2 + i * 4, change.actuator, false)
+        dataView.setInt16(4 + i * 4, change.value, false)
       })
 
       return buffer
