@@ -84,20 +84,32 @@ export class Motion implements IMessage {
   }
 
   toBytes(): ArrayBuffer {
-    const buffer = new ArrayBuffer(2)
-    const dataView = new DataView(buffer)
-
-    dataView.setUint8(0, this.type)
     if (this.straightDrive) {
+      const buffer = new ArrayBuffer(3)
+      const dataView = new DataView(buffer)
+
+      dataView.setUint8(0, this.type)
       dataView.setInt16(1, this.straightDrive, false)
+
+      return buffer
     } else if (this.change) {
+      const buffer = new ArrayBuffer(2 + this.change.length * 3)
+      const dataView = new DataView(buffer)
+
+      dataView.setUint8(0, this.type)
       dataView.setUint8(1, this.change.length)
       this.change.forEach((change, i) => {
         dataView.setUint8(2 + i * 3, change.actuator)
         dataView.setInt16(3 + i * 3, change.value, false)
       })
-    }
 
-    return buffer
+      return buffer
+    } else {
+      const buffer = new ArrayBuffer(1)
+      const dataView = new DataView(buffer)
+
+      dataView.setUint8(0, this.type)
+      return buffer
+    }
   }
 }
