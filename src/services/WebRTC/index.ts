@@ -6,6 +6,7 @@ import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setu
 import { Frame, GLONAX_PROTOCOL_HEADER_SIZE, MessageType, type IMessage } from "./commands";
 import { Control } from "./commands/controls";
 import { Engine } from "./commands/engine";
+import { Motion } from "./commands/motion";
 import { ModuleStatus } from "./commands/status";
 
 const configuration: RTCConfiguration = {
@@ -143,8 +144,8 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
       console.log(control)
       break
     case MessageType.MOTION:
-      // TODO: Implement...
-      console.log("WebRTC - received motion message")
+      const motion = Motion.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
+      console.log(motion)
       break
     case MessageType.ROTATOR:
       // TODO: Implement...
