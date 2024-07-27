@@ -40,6 +40,26 @@ export class Motion implements IMessage {
     this.change = change
   }
 
+  static stop_all(): Motion {
+    return new Motion(MotionType.STOP_ALL)
+  }
+
+  static resume_all(): Motion {
+    return new Motion(MotionType.RESUME_ALL)
+  }
+
+  static reset_all(): Motion {
+    return new Motion(MotionType.RESET_ALL)
+  }
+
+  static straight_drive(value: TMotionStraightDrive): Motion {
+    return new Motion(MotionType.STRAIGHT_DRIVE, value)
+  }
+
+  static change(change: TMotionChangeSet[]): Motion {
+    return new Motion(MotionType.CHANGE, undefined, change)
+  }
+
   static fromBytes(data: ArrayBuffer): Motion {
     const dataView = new DataView(data)
 
