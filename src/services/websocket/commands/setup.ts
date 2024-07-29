@@ -15,7 +15,7 @@ export class RTCSetupCommand extends WebSocketCommand {
 
     this.params = [
       {
-        video_track: 3,
+        video_track: 0,
         video_size: "1280x720",
         user_agent: "laixer-remote"
       },

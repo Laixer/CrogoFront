@@ -1,4 +1,4 @@
-import { initiateRTCConnection, send } from '@/services/WebRTC/index.js';
+import { initiateRTCConnection, send, connectVideoElement } from '@/services/WebRTC/index.js';
 import { establishWebSocketConnection } from '@/services/websocket/index.js';
 import { Engine } from './WebRTC/commands/engine';
 import { Control, ControlType } from './WebRTC/commands/controls';
@@ -124,6 +124,8 @@ export default {
   controlLights,
   engineShutdown,
   engineRequestRPM,
+
+  connectVideoElement,
 
   // 
   changeBoom

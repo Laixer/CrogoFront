@@ -20,6 +20,7 @@ const configuration: RTCConfiguration = {
 
 let WebRTCConnection: RTCPeerConnection | null = null
 let CommandChannel: RTCDataChannel | null = null
+let VideoStream: MediaStream | null = null
 
 
 export const getWebRTCConnection = function getWebRTCConnection(): RTCPeerConnection | null {
@@ -37,8 +38,15 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
       // Note: Without specifying at least 1 transciever / data channel, 
       //       trying to establish a connection will throw an error
-      // TODO: Leverage video.ts
-      // WebRTCConnection.addTransceiver('video', { direction: 'recvonly' })
+
+      WebRTCConnection.addTransceiver('video', { direction: 'recvonly' })
+      WebRTCConnection.ontrack = (event: RTCTrackEvent) => {
+        if (event.streams.length) {
+          VideoStream = event.streams[0]
+        } else {
+          console.error("WebRTC video - missing stream data")
+        }
+      } 
     
       // create the command channel
       CommandChannel = WebRTCConnection.createDataChannel("command")
@@ -189,5 +197,12 @@ export const setRemoteDescription = function setRemoteDescription(description: R
   } catch(err) {
     console.log("WebRTC - failed to set remote connection")
     throw err
+  }
+}
+
+
+export const connectVideoElement = (video: HTMLVideoElement) => {
+  if (VideoStream) {
+    video.srcObject = VideoStream
   }
 }
