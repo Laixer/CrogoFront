@@ -1,3 +1,4 @@
+import { parse, stringify } from "uuid"
 import { MessageType, type IMessage } from "."
 
 // TODO: Maybe move up
@@ -34,7 +35,7 @@ export class Instance implements IMessage {
     static fromBytes(data: ArrayBuffer): Instance {
         const dataView = new DataView(data)
 
-        const id = new TextDecoder().decode(new Uint8Array(data, 0, 16))
+        const id = stringify(new Uint8Array(data, 0, 16))
         const machine_type = dataView.getUint8(16) as MachineType
         const version = [dataView.getUint8(17), dataView.getUint8(18), dataView.getUint8(19)] as [number, number, number]
 
@@ -48,7 +49,7 @@ export class Instance implements IMessage {
     }
 
     toBytes(): ArrayBuffer {
-        const idBytes = new TextEncoder().encode(this.id)
+        const idBytes = parse(this.id)
         const modelBytes = new TextEncoder().encode(this.model)
         const serialNumberBytes = new TextEncoder().encode(this.serial_number)
         const buffer = new ArrayBuffer(24 + modelBytes.byteLength + serialNumberBytes.byteLength)
