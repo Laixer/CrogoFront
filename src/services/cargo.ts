@@ -3,6 +3,7 @@ import { establishWebSocketConnection } from '@/services/websocket/index.js';
 import { Engine } from './WebRTC/commands/engine';
 import { Control, ControlType } from './WebRTC/commands/controls';
 import { Actuator, Motion } from './WebRTC/commands/motion';
+import { Echo } from './WebRTC/commands/echo';
 
 let connectedUuid: string|null = null
 let isConnected = false
@@ -116,6 +117,16 @@ export const controlLights = function (on: boolean) {
   send(new Control(ControlType.MACHINE_LIGHTS, on))
 }
 
+export const echo = function () {
+
+  if (!isConnected) {
+    // Note: still trying, due to importance of command 
+    console.error("Cargo - Trying to stop motion without active connection")
+  }
+
+  send(new Echo(BigInt(Date.now())))
+}
+
 export default {
   connect,
   stopAllMotion,
@@ -126,6 +137,9 @@ export default {
   engineRequestRPM,
 
   connectVideoElement,
+  
+  echo,
+
 
   // 
   changeBoom

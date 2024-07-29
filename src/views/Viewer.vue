@@ -18,6 +18,13 @@ const instanceId = "d6d1a2db-52b9-4abb-8bea-f2d0537432e2"
 await Cargo.connect(instanceId)
 
 console.log("test")
+setTimeout(() => {
+  console.log('echo')
+  Cargo.echo()
+}, 200)
+
+
+
 
 onMounted(() => {
   const video = document.getElementById('remoteVideo')
