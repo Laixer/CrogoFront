@@ -19,6 +19,7 @@ const configuration: RTCConfiguration = {
 let WebRTCConnection: RTCPeerConnection | null = null
 let CommandChannel: RTCDataChannel | null = null
 
+
 export const getWebRTCConnection = function getWebRTCConnection(): RTCPeerConnection | null {
   return WebRTCConnection
 }
@@ -28,38 +29,58 @@ export const isConnected = function isConnected(): boolean {
 }
 
 export const initiateRTCConnection = function initiateRTCConnection() {
-  WebRTCConnection = new RTCPeerConnection(configuration);
+  return new Promise((resolve, reject) => {
+    try {
+      WebRTCConnection = new RTCPeerConnection(configuration);
 
-  // Note: Without specifying at least 1 transciever, trying to establish a connection will throw an error
-  // TODO: Leverage video.ts
-  WebRTCConnection.addTransceiver('video', { direction: 'recvonly' })
+      // Note: Without specifying at least 1 transciever / data channel, 
+      //       trying to establish a connection will throw an error
+      // TODO: Leverage video.ts
+      // WebRTCConnection.addTransceiver('video', { direction: 'recvonly' })
+    
+      // create the command channel
+      CommandChannel = WebRTCConnection.createDataChannel("command")
+      CommandChannel.onmessage = onReceiveMessage
+    
+      // Resolve the promise when the connection is established
+      WebRTCConnection.onconnectionstatechange = (event: Event) => {
+        console.log("WebRTC - connection state change", event)
 
-  // create the command channel
-  CommandChannel = WebRTCConnection.createDataChannel("command")
-  CommandChannel.onmessage = onReceiveMessage
-
-  // Establishing the connection
-  WebRTCConnection.onicecandidate = onicecandidate
-  console.log("WebRTC - Creating offer")
-  // WebRTCConnection.onicegatheringstatechange = onicegatheringstatechange
-
-  WebRTCConnection.createOffer()
-    .then(async (offer) => {
-      if (!WebRTCConnection) {
-        return // Because TS...
+        if (isConnected()) {
+          
+          // Remove this event handler. We only want to resolve once
+          WebRTCConnection && (WebRTCConnection.onconnectionstatechange = null)
+          
+          resolve(true)
+        }
       }
-      console.log("WebRTC - Created offer", offer)
-      await WebRTCConnection.setLocalDescription(offer)
 
-      console.log("WebRTC - local description", WebRTCConnection?.localDescription)
+      // Establishing the connection
+      WebRTCConnection.onicecandidate = onicecandidate
 
-      // Setup RTC through the websocket connection
-      sendWebsocketCommand(
-        new RTCSetupCommand(offer)
-      )
-    })
+    
+      console.log("WebRTC - Creating offer")
+      WebRTCConnection.createOffer()
+        .then(async (offer) => {
+          if (!WebRTCConnection) {
+            return // Because TS...
+          }
+          console.log("WebRTC - Created offer", offer)
+          await WebRTCConnection.setLocalDescription(offer)
+    
+          console.log("WebRTC - local description", WebRTCConnection?.localDescription)
+    
+          // Setup RTC through the websocket connection
+          sendWebsocketCommand(
+            new RTCSetupCommand(offer)
+          )
+        })
+    } catch(err) {
+      console.log("WebRTC - failure while connecting", err)
+      reject(err)
+    }
+  })  
 }
-
 
 export const send = function send(message: IMessage) {
   if (!isConnected()) {
@@ -99,26 +120,6 @@ const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent)
   )
 }
 
-// const onicegatheringstatechange = function onicegatheringstatechange(event: Event) {
-//   let connection = event.target;
-
-//   // @ts-ignore - quick test. method is to be removed
-//   if (connection.iceGatheringState === 'complete') {
-//     if (WebRTCConnection === null) {
-//       console.error("WebRTC - does not compute") // TS being TS
-//       return 
-//     }
-
-//     if (WebRTCConnection.localDescription === null) {
-//       console.error("WebRTC - A local description is required to setup a connection")
-//       return
-//     }
-//     sendWebsocketCommand(
-//       new RTCSetupCommand(WebRTCConnection?.localDescription)
-//     )
-//   }
-// }
-
 /**
  * On receiving a data message from the command channel
  */
@@ -128,7 +129,7 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
   // TODO: Check that we have received a full frame AND its payload. This essentially means the array buffer is at least 10+1 bytes long
 
   const frame = Frame.fromBytes(event.data)
-  console.log(frame)
+  console.log("WebRTC - frame", frame)
 
   switch (frame.messageType) {
     case MessageType.STATUS:
@@ -148,11 +149,11 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
       console.log(motion)
       break
     case MessageType.ROTATOR:
-      // TODO: Implement...
+      // TODO: Implement... 3d vector - ignore every 50ms hide message
       console.log("WebRTC - received rotator message")
       break
     case MessageType.ACTOR:
-      // TODO: Implement...
+      // TODO: Implement... - 3d presentation
       console.log("WebRTC - received actor message")
       break
     default:
@@ -164,15 +165,19 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
  * Used by the Websocket RTCSetupCommand to establish the RTC connection
  */
 export const setRemoteDescription = function setRemoteDescription(description: RTCSessionDescription) {
+  try {
+    console.log("WebRTC - setting remote description")
 
-  console.log("WebRTC - setting remote description")
+    const WebRTC = getWebRTCConnection()
+    if (WebRTC === null) {
+      console.error("WebRTC - Missing WebRTC instance while trying to set a remote description")
 
-  const WebRTC = getWebRTCConnection()
+      throw new Error("WebRTC - Missing WebRTC instance while trying to set a remote description")
+    }
 
-  if (WebRTC === null) {
-    console.error("WebRTC - Missing WebRTC instance while trying to set a remote description")
-    return
+    WebRTC.setRemoteDescription(description)
+  } catch(err) {
+    console.log("WebRTC - failed to set remote connection")
+    throw err
   }
-
-  WebRTC.setRemoteDescription(description)
 }

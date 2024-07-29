@@ -1,7 +1,7 @@
 /**
  * Size of the GLONAX protocol header in bytes.
  */
-const GLONAX_PROTOCOL_HEADER_SIZE = 10;
+export const GLONAX_PROTOCOL_HEADER_SIZE = 10;
 /**
  * Magic header value for the GLONAX protocol.
  */
@@ -24,11 +24,11 @@ export interface IMessage {
  */
 export enum MessageType {
   ERROR = 0x00,     // Future use
-  ECHO = 0x01,      // Robot -> Operator, Operator -> Robot
-  SESSION = 0x10,   // Handled by glonax-agent
+  ECHO = 0x01,      // Robot -> Operator, Operator -> Robot -- latency measurement - roundtrip "signal icon"
+  SESSION = 0x10,   // Handled by glonax-agent -- 
   SHUTDOWN = 0x11,  // Deprecated
   REQUEST = 0x12,   // Deprecated
-  INSTANCE = 0x15,  // Handled by glonax-agent
+  INSTANCE = 0x15,  // Handled by glonax-agent -- uuid of crane, name, version, serial number, etc. show in context panel
   STATUS = 0x16,    // Robot -> Operator
   MOTION = 0x20,    // Robot -> Operator, Operator -> Robot
   SIGNAL = 0x31,    // Deprecated
@@ -37,8 +37,8 @@ export enum MessageType {
   GNSS = 0x42,      // Future use
   ENGINE = 0x43,    // Robot -> Operator, Operator -> Robot
   TARGET = 0x44,    // Operator -> Robot
-  CONTROL = 0x45,   // Operator -> Robot, Robot -> Operator
-  ROTATOR = 0x46    // Robot -> Operator
+  CONTROL = 0x45,   // Operator -> Robot, Robot -> Operator (future)
+  ROTATOR = 0x46    // Robot -> Operator -- "raw" data not really necesary, because already provided by actuator
 }
 
 /**

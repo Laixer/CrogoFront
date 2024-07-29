@@ -32,30 +32,27 @@ export const isWebSocketConnectionAvailable = function isWebSocketConnectionAvai
  *  
  */
 export const establishWebSocketConnection = function establishWebSocketConnection({ 
-  instanceId,
-  onOpen
+  instanceId
 }: {
   instanceId: string
-  onOpen?: (this: WebSocket, ev: Event) => any
 }) {
-
-  if (WebSocketConnection !== null) {
-    console.error("Websocket - connection already established")
-
-    // TODO: Use isWebSocketConnectionAvailable to maybe re-open a closed connection? 
-
-    throw new Error("Only one connection allowed")
-  }
-
-  WebSocketConnection = new WebSocket(`${ws_host}/app/${instanceId}/ws`);
-
-  // TODO: Update DOM indicator based on connection status (use reactivity?)
-  if (onOpen) {
-    WebSocketConnection.onopen = onOpen
-  }
-  WebSocketConnection.onclose = onClose
-
-  WebSocketConnection.onmessage = handleResponseMessage
+  return new Promise((resolve, reject) => {
+    if (WebSocketConnection !== null) {
+      console.error("Websocket - connection already established")
+  
+      // TODO: Use isWebSocketConnectionAvailable to maybe re-open a closed connection? 
+      reject(new Error("Only one connection allowed"))
+    }
+  
+    WebSocketConnection = new WebSocket(`${ws_host}/app/${instanceId}/ws`);
+  
+    WebSocketConnection.onclose = onClose
+    WebSocketConnection.onmessage = handleResponseMessage
+    
+    WebSocketConnection.onopen = function() {
+      resolve(true)
+    }
+  })
 }
 
 /**
@@ -90,12 +87,8 @@ export const sendMessage = function sendMessage(message: object) {
 
 
 /**
- * Upon opening a connection immediately use it to establish 
+ * 
  */
-// const onOpen = function onOpen() {
-//   console.log("Websocket - connection opened")
-//   createWebRTCOffer()
-// }
 const onClose = function onClose() {
   console.log("Websocket - connection closed")
 }

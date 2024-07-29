@@ -2,28 +2,43 @@ import { initiateRTCConnection, send } from '@/services/WebRTC/index.js';
 import { establishWebSocketConnection } from '@/services/websocket/index.js';
 import { Engine } from './WebRTC/commands/engine';
 import { Control, ControlType } from './WebRTC/commands/controls';
+import { Actuator, Motion } from './WebRTC/commands/motion';
 
+let connectedUuid: string|null = null
 let isConnected = false
 
 /**
  * Establish a Websocket & RTC Connection to a specific Cargo unit
- *  TODO: Restrict to only 1 connected unit allowed
  */
-export const connect = function connect(uuid: string) {
+export const connect = async function connect(uuid: string) {
+
+  if (isConnected) {
+    console.log(`Cargo - is already connected`, connectedUuid)
+    throw new Error(`Cargo - is already connected - ${connectedUuid}`)
+  }
 
   console.log("Cargo - connecting", uuid)
 
   // initiateRTCConnection()
-  establishWebSocketConnection({
-    instanceId: uuid,
-    onOpen: initiateRTCConnection
+  await establishWebSocketConnection({
+    instanceId: uuid
   })
+    .catch((err: Error) => {
+      console.log("Cargo - failed to connect websocket")
+      throw err
+    })
 
-  // TODO: Verify connections 
-  // console.log("Cargo - connected", uuid)
+  console.log("Cargo - websocket connected")
 
-  // TODO: not yet true at this point
+  await initiateRTCConnection()
+    .catch((err: Error) => {
+      console.log("Cargo - failed to connect WebRTC")
+      throw err
+    })
+
+  console.log("Cargo - WebRTC connection established")
   isConnected = true
+  connectedUuid = uuid
 }
 
 
@@ -35,7 +50,39 @@ export const stopAllMotion = function () {
   }
 
   // TODO: As yet, Motion is not implemented
-  // send(new MotionStopAllCommand())
+  send(Motion.stop_all())
+}
+
+export const resumeAllMotion = function () {
+
+  if (!isConnected) {
+    // Note: still trying, due to importance of command 
+    console.error("Cargo - Trying to stop motion without active connection")
+  }
+
+  send(Motion.resume_all())
+}
+
+export const straightDrive = function (value: number) {
+
+  if (!isConnected) {
+    // Note: still trying, due to importance of command 
+    console.error("Cargo - Trying to stop motion without active connection")
+  }
+
+  send(Motion.straight_drive(value))
+}
+
+// TODO: Test 
+export const changeBoom = function() {
+
+  send(Motion.change([{
+    actuator: Actuator.BOOM,
+    value: -15000
+  }, {
+    actuator: Actuator.ARM,
+    value: 15000
+  }]))
 }
 
 export const engineShutdown = function () {
@@ -67,10 +114,17 @@ export const controlLights = function (on: boolean) {
 
   // TODO: We may want to wrap this into a ControlMethod or similar 
   send(new Control(ControlType.MACHINE_LIGHTS, on))
-
 }
 
 export default {
   connect,
-  stopAllMotion
+  stopAllMotion,
+  resumeAllMotion,
+  straightDrive,
+  controlLights,
+  engineShutdown,
+  engineRequestRPM,
+
+  // 
+  changeBoom
 }
