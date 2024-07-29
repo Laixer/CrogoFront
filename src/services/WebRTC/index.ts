@@ -6,6 +6,7 @@ import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setu
 import { Frame, GLONAX_PROTOCOL_HEADER_SIZE, MessageType, type IMessage } from "./commands";
 import { Control } from "./commands/controls";
 import { Engine } from "./commands/engine";
+import { Instance } from "./commands/instance";
 import { Motion } from "./commands/motion";
 import { ModuleStatus } from "./commands/status";
 
@@ -147,6 +148,10 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
     case MessageType.MOTION:
       const motion = Motion.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       console.log(motion)
+      break
+    case MessageType.INSTANCE:
+      const instance = Instance.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
+      console.log(instance)
       break
     case MessageType.ROTATOR:
       // TODO: Implement... 3d vector - ignore every 50ms hide message
