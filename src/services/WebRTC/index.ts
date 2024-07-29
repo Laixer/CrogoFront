@@ -5,6 +5,7 @@ import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setu
 // FUTURE: WIP: TODO
 import { Frame, GLONAX_PROTOCOL_HEADER_SIZE, MessageType, type IMessage } from "./commands";
 import { Control } from "./commands/controls";
+import { Echo } from "./commands/echo";
 import { Engine } from "./commands/engine";
 import { Instance } from "./commands/instance";
 import { Motion } from "./commands/motion";
@@ -133,6 +134,10 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
   console.log("WebRTC - frame", frame)
 
   switch (frame.messageType) {
+    case MessageType.ECHO:
+      const echo = Echo.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
+      console.log(echo)
+      break
     case MessageType.STATUS:
       const moduleStatus = ModuleStatus.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       console.log(moduleStatus)
