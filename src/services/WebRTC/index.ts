@@ -20,6 +20,7 @@ const configuration: RTCConfiguration = {
 
 let WebRTCConnection: RTCPeerConnection | null = null
 let CommandChannel: RTCDataChannel | null = null
+let SignalChannel: RTCDataChannel | null = null
 let VideoStream: MediaStream | null = null
 
 
@@ -49,8 +50,14 @@ export const initiateRTCConnection = function initiateRTCConnection() {
       } 
     
       // create the command channel
+      // Command channel is for 2 way communication
       CommandChannel = WebRTCConnection.createDataChannel("command")
       CommandChannel.onmessage = onReceiveMessage
+
+      // TODO: separate signal on receive message
+      // Signal channel is only for receiving messages
+      SignalChannel = WebRTCConnection.createDataChannel("signal")
+      SignalChannel.onmessage = onReceiveMessage
     
       // Resolve the promise when the connection is established
       WebRTCConnection.onconnectionstatechange = (event: Event) => {
@@ -120,6 +127,7 @@ export const send = function send(message: IMessage) {
 const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent) {
   console.log("WebRTC - ice candidate", event.candidate)
 
+  // signals that there are no more candidates to process
   if (event.candidate === null) {
     return
   }
@@ -143,6 +151,7 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
 
   switch (frame.messageType) {
     case MessageType.ECHO:
+      console.log("ECHO")
       const echo = Echo.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       console.log(echo)
       break
@@ -165,6 +174,8 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
     case MessageType.INSTANCE:
       const instance = Instance.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       console.log(instance)
+      // TODO: Verify instance id
+      // TODO: Verify version 
       break
     case MessageType.ROTATOR:
       // TODO: Implement... 3d vector - ignore every 50ms hide message
