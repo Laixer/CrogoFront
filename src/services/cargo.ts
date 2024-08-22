@@ -1,9 +1,10 @@
 import { initiateRTCConnection, send, connectVideoElement } from '@/services/WebRTC/index.js';
-import { establishWebSocketConnection } from '@/services/websocket/index.js';
+import { establishWebSocketConnection, sendCommand } from '@/services/websocket/index.js';
 import { Engine } from './WebRTC/commands/engine';
 import { Control, ControlType } from './WebRTC/commands/controls';
 import { Actuator, Motion } from './WebRTC/commands/motion';
 import { Echo } from './WebRTC/commands/echo';
+import { RebootCommand, DisconnectRTCCommand } from './websocket/commands/state';
 
 let connectedUuid: string|null = null
 let isConnected = false
@@ -127,6 +128,16 @@ export const echo = function () {
   send(new Echo(BigInt(Date.now())))
 }
 
+export const reboot = function() {
+  console.log("sending reboot command")
+  sendCommand(new RebootCommand())
+}
+
+export const disconnect = function() {
+  console.log("sending disconnect RTC command")
+  sendCommand(new DisconnectRTCCommand())
+}
+
 export default {
   connect,
   stopAllMotion,
@@ -139,6 +150,8 @@ export default {
   connectVideoElement,
   
   echo,
+  reboot,
+  disconnect,
 
 
   // 

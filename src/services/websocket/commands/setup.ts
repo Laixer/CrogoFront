@@ -1,8 +1,6 @@
 import { setRemoteDescription } from "@/services/WebRTC"
 import { WebSocketCommand } from "."
 
-const volvo = false
-
 /**
  * Websocket command to start the setup of the RTC connection
  */
@@ -16,23 +14,19 @@ export class RTCSetupCommand extends WebSocketCommand {
     this.params = [
       {
         video_track: 0,
-        video_size: "1280x720",
-        user_agent: "laixer-remote"
+        connection_id: this.connectionId
       },
       offer
     ]
 
-    // Volvo
-    this.params = volvo ? [ offer.sdp ] : this.params
-    this.handler = volvo ? this.handleVolVoMessage : this.handleMessage
+    this.handler = this.handleMessage
   }
 
   handleMessage(message: { result: RTCSessionDescription }) {
-    setRemoteDescription(message.result)
-  }
+    
+    console.log("RTC SetupCommand", message)
 
-  handleVolVoMessage(message: { result: string } ) {
-    new RTCSessionDescription( { sdp: message.result, type: 'answer' })
+    setRemoteDescription(message.result)
   }
 }
 
@@ -46,7 +40,12 @@ export class RTCCandidateCommand extends WebSocketCommand {
   constructor(candidate: RTCIceCandidate) {
     super()
 
-    this.params = [ candidate ]
+    this.params = [ 
+      {
+        connection_id: this.connectionId
+      }, 
+      candidate 
+    ]
 
     this.handler = this.handleMessage
   }
@@ -58,3 +57,4 @@ export class RTCCandidateCommand extends WebSocketCommand {
     }
   }
 }
+

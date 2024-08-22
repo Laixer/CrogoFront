@@ -1,4 +1,5 @@
 
+import Debugger from "../Debugger";
 import type { IWebSocketCommand } from "./commands";
 import { addToQueue, handleResponseMessage } from "./queue";
 
@@ -11,6 +12,18 @@ const ws_host = 'wss://edge.laixer.equipment/api';
  * The WebSocket instance
  */
 let WebSocketConnection: WebSocket|null = null
+
+/**
+ * The unique connection id
+ */
+const connectionId: number = Math.floor(100000 + Math.random() * 900000)
+
+/**
+ * Retrieve the unique connection id
+ */
+export const getConnectionId = function getConnectionId() {
+  return connectionId
+}
 
 /**
  * Make the WebSocket connection available
@@ -35,10 +48,10 @@ export const establishWebSocketConnection = function establishWebSocketConnectio
   instanceId
 }: {
   instanceId: string
-}) {
-  return new Promise((resolve, reject) => {
+}): Promise<WebSocket> {
+  return new Promise<WebSocket>((resolve, reject) => {
     if (WebSocketConnection !== null) {
-      console.error("Websocket - connection already established")
+      Debugger.error("Websocket - connection already established")
   
       // TODO: Use isWebSocketConnectionAvailable to maybe re-open a closed connection? 
       reject(new Error("Only one connection allowed"))
@@ -50,7 +63,8 @@ export const establishWebSocketConnection = function establishWebSocketConnectio
     WebSocketConnection.onmessage = handleResponseMessage
     
     WebSocketConnection.onopen = function() {
-      resolve(true)
+      // Make TS understand that WebSocketConnection is not null... 
+      resolve(WebSocketConnection as WebSocket)
     }
   })
 }
@@ -60,7 +74,7 @@ export const establishWebSocketConnection = function establishWebSocketConnectio
  *  Commands are queued and include an identifier and method for handling the response
  */
 export const sendCommand = function sendCommand(command: IWebSocketCommand) {
-  addToQueue(command)
+  addToQueue(command, connectionId)
 }
 
 /**
@@ -70,17 +84,17 @@ export const sendCommand = function sendCommand(command: IWebSocketCommand) {
  */
 export const sendMessage = function sendMessage(message: object) {
   try {
-    console.log("Websocket - sending message", message)
+    Debugger.log("Websocket - sending message", message)
 
     const connection = getWebSocketConnection()
     connection?.send(
       JSON.stringify(message)
     )
 
-    console.log("Websocket - message sent")
+    Debugger.info("Websocket - message sent", message)
     return true
   } catch(err) {
-    console.error("Websocket - failed to send message", err)
+    Debugger.error("Websocket - failed to send message", err)
     return false
   }
 }
@@ -90,7 +104,7 @@ export const sendMessage = function sendMessage(message: object) {
  * 
  */
 const onClose = function onClose() {
-  console.log("Websocket - connection closed")
+  Debugger.info("Websocket - connection closed")
 }
 
 

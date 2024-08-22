@@ -1,5 +1,5 @@
 
-import { v4 as uuidv4 } from 'uuid'; 
+// import { v4 as uuidv4 } from 'uuid'; 
 import { isWebSocketConnectionAvailable, sendMessage } from '.';
 import type { IWebSocketCommand } from './commands';
 
@@ -10,12 +10,8 @@ import type { IWebSocketCommand } from './commands';
  */
 const WebsocketQueue: IWebSocketCommand[] = []
 
-
-export const addToQueue = function addToQueue(command: IWebSocketCommand, send: boolean = true) {
-  command.id = uuidv4()
-  command.status = "new"
-  command.retry = 0
-
+export const addToQueue = function addToQueue(command: IWebSocketCommand, connectionId: number, send: boolean = true) {
+  
   WebsocketQueue.push(command)
 
   // TODO: Remove after queue is reactive
@@ -72,6 +68,8 @@ export const sendQueuedCommands = function sendQueuedCommands() {
  */
 export const handleResponseMessage = function handleResponseMessage(event: MessageEvent) {
 
+  console.log('Websocket - raw', event)
+
   const message = JSON.parse(event.data);
   console.log("Websocket - received message", message.id, message)
 
@@ -84,6 +82,8 @@ export const handleResponseMessage = function handleResponseMessage(event: Messa
   }
 
   command.status = 'handling'
+
+  // TODO: Error handler - check for message.error 
 
   if (typeof command.handler === "function") {
     console.log("Websocket - proceeding to run message handler", message.id)

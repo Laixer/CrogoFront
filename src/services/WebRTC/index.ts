@@ -1,4 +1,6 @@
 
+import { disconnect } from "../cargo";
+import Debugger from "../Debugger";
 import { sendCommand as sendWebsocketCommand } from "../websocket";
 import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setup";
 
@@ -32,8 +34,12 @@ export const isConnected = function isConnected(): boolean {
   return WebRTCConnection !== null && WebRTCConnection?.connectionState === 'connected'
 }
 
+export const isFailed = function isFailed(): boolean {
+  return WebRTCConnection !== null && WebRTCConnection?.connectionState === 'failed'
+}
+
 export const initiateRTCConnection = function initiateRTCConnection() {
-  return new Promise((resolve, reject) => {
+  return new Promise<RTCPeerConnection>((resolve, reject) => {
     try {
       WebRTCConnection = new RTCPeerConnection(configuration);
 
@@ -68,7 +74,17 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           // Remove this event handler. We only want to resolve once
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = null)
           
-          resolve(true)
+          resolve(WebRTCConnection as RTCPeerConnection)
+        }
+
+        if (isFailed()) {
+          // TODO: Show message ?
+          // TODO: Auto retry ? After delay of x seconds ? 
+          console.error("WebRT - Failed connection")
+
+          // Remove this event handler. We only want to resolve once
+          WebRTCConnection && (WebRTCConnection.onconnectionstatechange = null)
+          reject("connection failed")
         }
       }
 
@@ -138,6 +154,36 @@ const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent)
   )
 }
 
+
+const lastReceivedMessagesByType: Record<MessageType, MessageEvent|undefined> = {
+  [MessageType.ERROR]: undefined,
+  [MessageType.ECHO]: undefined,
+  [MessageType.SESSION]: undefined,
+  [MessageType.SHUTDOWN]: undefined,
+  [MessageType.REQUEST]: undefined,
+  [MessageType.INSTANCE]: undefined,
+  [MessageType.STATUS]: undefined,
+  [MessageType.MOTION]: undefined,
+  [MessageType.SIGNAL]: undefined,
+  [MessageType.ACTOR]: undefined,
+  [MessageType.VMS]: undefined,
+  [MessageType.GNSS]: undefined,
+  [MessageType.ENGINE]: undefined,
+  [MessageType.TARGET]: undefined,
+  [MessageType.CONTROL]: undefined,
+  [MessageType.ROTATOR]: undefined
+}
+
+const ignoreReceivedMessages = (type: MessageType, event: MessageEvent ) => {
+
+  if (lastReceivedMessagesByType[type] && lastReceivedMessagesByType[type] === event) {
+    return true
+  }
+
+  lastReceivedMessagesByType[type] = event
+  return false
+}
+
 /**
  * On receiving a data message from the command channel
  */
@@ -147,7 +193,14 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
   // TODO: Check that we have received a full frame AND its payload. This essentially means the array buffer is at least 10+1 bytes long
 
   const frame = Frame.fromBytes(event.data)
-  console.log("WebRTC - frame", frame)
+
+  Debugger.log("WebRTC - frame", frame)
+
+  // console.log("WebRTC - frame", frame)
+  if (ignoreReceivedMessages(frame.messageType, event)) {
+    console.log("Ignore")
+    return 
+  }
 
   switch (frame.messageType) {
     case MessageType.ECHO:
@@ -193,7 +246,7 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
 /**
  * Used by the Websocket RTCSetupCommand to establish the RTC connection
  */
-export const setRemoteDescription = function setRemoteDescription(description: RTCSessionDescription) {
+export const setRemoteDescription = async function setRemoteDescription(description: RTCSessionDescription) {
   try {
     console.log("WebRTC - setting remote description")
 
@@ -204,9 +257,12 @@ export const setRemoteDescription = function setRemoteDescription(description: R
       throw new Error("WebRTC - Missing WebRTC instance while trying to set a remote description")
     }
 
-    WebRTC.setRemoteDescription(description)
+    await WebRTC.setRemoteDescription(description)
+    
   } catch(err) {
-    console.log("WebRTC - failed to set remote connection")
+    console.log("WebRTC - failed to set remote connection", description)
+
+    disconnect()
     throw err
   }
 }
