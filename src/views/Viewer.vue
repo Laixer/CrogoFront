@@ -13,11 +13,12 @@ console.log("Viewer - instance_id from url", instance_id)
 // const instanceId = "78adc7fc-6f60-4fc7-81ed-91396892f4a1"
 
 // Volvo
-const instanceId = "38df5a6a-0b90-45f6-89eb-b831a3db555d"
+// const instanceId = "38df5a6a-0b90-45f6-89eb-b831a3db555d"
 
 try {
+  const instanceId = instance_id
   await Cargo.connect(instanceId)
-} catch(err) {
+} catch (err) {
   console.log("ERR0R")
   console.log(err)
 }
@@ -43,22 +44,17 @@ onMounted(() => {
 
 <template>
 
-<video 
-  id="remoteVideo" 
-  playsinline 
-  autoplay 
-  muted></video>
+  <video id="remoteVideo" playsinline autoplay muted></video>
 
-<div id="overlay">This is HTML overlay on top of the video! </div>
-  
+  <div id="overlay">This is HTML overlay on top of the video! </div>
+
 </template>
 
 <style>
-
 #overlay {
-  position: absolute; 
-  top: 100px; 
-  color: #FFF; 
+  position: absolute;
+  top: 100px;
+  color: #FFF;
   text-align: center;
   font-size: 20px;
   background-color: rgba(221, 221, 221, 0.3);
@@ -70,6 +66,4 @@ onMounted(() => {
 #remoteVideo {
   z-index: 1;
 }
-
-
 </style>
