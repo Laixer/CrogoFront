@@ -2,6 +2,12 @@
 import Cargo from '@/services/cargo.js';
 import { onMounted } from 'vue';
 
+import Ping from '@/components/Ping.vue'
+import RPM from '@/components/RPM.vue'
+import EmergencyButton from '@/components/EmergencyButton.vue'
+import StopMotionButton from '@/components/StopMotionButton.vue'
+import StopMotionWarning from '@/components/StopMotionWarning.vue'
+
 const urlParams = new URLSearchParams(window.location.search)
 const instanceId = urlParams.get('id')
 console.log("Viewer - instance_id from url", instanceId)
@@ -27,10 +33,11 @@ try {
 }
 
 
-console.log("test")
 setTimeout(() => {
 
-  Cargo.echo()
+  // Cargo.reboot()
+  // Cargo.echo()
+  // Cargo.engineRequestRPM(800)
 
 }, 2000)
 
@@ -45,27 +52,84 @@ onMounted(() => {
 </script>
 
 <template>
+  <div class="videoContainer">
+    <video id="remoteVideo" playsinline autoplay muted></video>
 
-  <video id="remoteVideo" playsinline autoplay muted></video>
+    <div class="overlay center top bottom left right">
+      <StopMotionWarning />
+    </div>
 
-  <div id="overlay">This is HTML overlay on top of the video! </div>
+    <div class="overlay top right flex column justify-end align-end mt-1 mr-1">
+      <div class="flex inline">
+        <Ping />
+        <RPM />
+      </div>
+      <div 
+        class="flex column justify-end align-end mt-1" 
+        style="color: black">
+        <StopMotionButton />
+      </div>
+    </div>
 
+    <div class="overlay bottom right mb-1 mr-1">
+      <EmergencyButton />
+    </div>
+    
+
+  </div>
 </template>
 
 <style>
-#overlay {
+.videoContainer {
+  position: relative;
+  display: flex;
+}
+
+.overlay {
   position: absolute;
-  top: 100px;
-  color: #FFF;
-  text-align: center;
-  font-size: 20px;
-  background-color: rgba(221, 221, 221, 0.3);
-  width: 640px;
-  padding: 10px 0;
   z-index: 2147483647;
+}
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.top {
+  top: 0;
+}
+.bottom {
+  bottom: 0;
+}
+.left {
+  left: 0
+}
+.right {
+  right: 0;
 }
 
 #remoteVideo {
   z-index: 1;
 }
+
+.flex {
+  display: flex;
+}
+.flex.inline {
+  flex-direction: row;
+}
+.flex.column {
+  flex-direction: column;
+}
+.flex.justify-end {
+  justify-content: flex-end
+}
+.flex.align-end {
+  align-items: flex-end
+}
+.flex-grow {
+  flex-grow: 1;
+}
+
+
 </style>

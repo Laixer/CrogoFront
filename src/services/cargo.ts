@@ -1,4 +1,4 @@
-import { initiateRTCConnection, send, connectVideoElement } from '@/services/WebRTC/index.js';
+import { initiateRTCConnection, send, connectVideoElement, subscribe } from '@/services/WebRTC/index.js';
 import { establishWebSocketConnection, sendCommand } from '@/services/websocket/index.js';
 import { Engine } from './WebRTC/commands/engine';
 import { Control, ControlType } from './WebRTC/commands/controls';
@@ -49,10 +49,8 @@ export const stopAllMotion = function () {
   if (!isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to stop motion without active connection")
-    return
   }
 
-  // TODO: As yet, Motion is not implemented
   send(Motion.stop_all())
 }
 
@@ -144,6 +142,8 @@ export const disconnect = function() {
   sendCommand(new DisconnectRTCCommand())
 }
 
+
+
 export default {
   connect,
   stopAllMotion,
@@ -159,6 +159,8 @@ export default {
   reboot,
   disconnect,
 
+  // Subscribe to WebRTC events
+  subscribe,
 
   // 
   changeBoom

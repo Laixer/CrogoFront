@@ -25,6 +25,11 @@ let CommandChannel: RTCDataChannel | null = null
 let SignalChannel: RTCDataChannel | null = null
 let VideoStream: MediaStream | null = null
 
+/**
+ * 
+ */
+const subscriptions: Record<string, Function[]> = {}
+
 
 export const getWebRTCConnection = function getWebRTCConnection(): RTCPeerConnection | null {
   return WebRTCConnection
@@ -112,10 +117,13 @@ export const initiateRTCConnection = function initiateRTCConnection() {
       console.log("WebRTC - failure while connecting", err)
       reject(err)
     }
-  })  
+  })
 }
 
 export const send = function send(message: IMessage) {
+
+  // console.log("sending message", message)
+
   if (!isConnected()) {
     console.error("WebRTC - not connected") // TODO: Throw Exception
   }
@@ -155,7 +163,7 @@ const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent)
 }
 
 
-const lastReceivedMessagesByType: Record<MessageType, MessageEvent|undefined> = {
+const lastReceivedMessagesByType: Record<MessageType, string|undefined> = {
   [MessageType.ERROR]: undefined,
   [MessageType.ECHO]: undefined,
   [MessageType.SESSION]: undefined,
@@ -174,13 +182,15 @@ const lastReceivedMessagesByType: Record<MessageType, MessageEvent|undefined> = 
   [MessageType.ROTATOR]: undefined
 }
 
-const ignoreReceivedMessages = (type: MessageType, event: MessageEvent ) => {
+const ignoreReceivedMessages = (type: MessageType, message: IMessage ) => {
+  
+  const json = JSON.stringify(message)
 
-  if (lastReceivedMessagesByType[type] && lastReceivedMessagesByType[type] === event) {
+  if (lastReceivedMessagesByType[type] && lastReceivedMessagesByType[type] === json) {
     return true
   }
 
-  lastReceivedMessagesByType[type] = event
+  lastReceivedMessagesByType[type] = json
   return false
 }
 
@@ -194,49 +204,66 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
 
   const frame = Frame.fromBytes(event.data)
 
-  Debugger.log("WebRTC - frame", frame)
+  // Debugger.log("WebRTC - frame", frame)
 
   // console.log("WebRTC - frame", frame)
-  if (ignoreReceivedMessages(frame.messageType, event)) {
-    console.log("Ignore")
-    return 
-  }
+  // if (ignoreReceivedMessages(frame.messageType, event)) {
+  //   console.log("Ignore")
+  //   return 
+  // }
 
   switch (frame.messageType) {
     case MessageType.ECHO:
-      console.log("ECHO")
+      
       const echo = Echo.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
-      console.log(echo)
+      
+      // Publish event to handlers
+      if (Array.isArray(subscriptions[MessageType.ECHO])) {
+        for (let hander of subscriptions[MessageType.ECHO]) {
+          hander(echo)
+        }
+      }
+
       break
     case MessageType.STATUS:
       const moduleStatus = ModuleStatus.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
-      console.log(moduleStatus)
+      // console.log(moduleStatus)
       break
     case MessageType.ENGINE:
       const engine = Engine.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
-      console.log(engine)
+
+      if (ignoreReceivedMessages(frame.messageType, engine)) {
+        break;
+      }
+
+      // Publish event to handlers
+      if (Array.isArray(subscriptions[MessageType.ENGINE])) {
+        for (let hander of subscriptions[MessageType.ENGINE]) {
+          hander(engine)
+        }
+      }
       break
     case MessageType.CONTROL:
       const control = Control.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
-      console.log(control)
+      // console.log(control)
       break
     case MessageType.MOTION:
       const motion = Motion.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
-      console.log(motion)
+      // console.log(motion)
       break
     case MessageType.INSTANCE:
       const instance = Instance.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
-      console.log(instance)
+      // console.log(instance)
       // TODO: Verify instance id
       // TODO: Verify version 
       break
     case MessageType.ROTATOR:
       // TODO: Implement... 3d vector - ignore every 50ms hide message
-      console.log("WebRTC - received rotator message")
+      // console.log("WebRTC - received rotator message")
       break
     case MessageType.ACTOR:
       // TODO: Implement... - 3d presentation
-      console.log("WebRTC - received actor message")
+      // console.log("WebRTC - received actor message")
       break
     default:
       console.log("WebRTC - received unknown message")
@@ -265,6 +292,14 @@ export const setRemoteDescription = async function setRemoteDescription(descript
     disconnect()
     throw err
   }
+}
+
+/**
+ * Subsribe to WebRTC events
+ */
+export const subscribe = function(channel: MessageType, handler: Function) {
+  subscriptions[channel] = subscriptions[channel] || []
+  subscriptions[channel].push(handler)
 }
 
 
