@@ -3,8 +3,8 @@ import Cargo from '@/services/cargo.js';
 import { onMounted } from 'vue';
 
 const urlParams = new URLSearchParams(window.location.search)
-const instance_id = urlParams.get('id')
-console.log("Viewer - instance_id from url", instance_id)
+const instanceId = urlParams.get('id')
+console.log("Viewer - instance_id from url", instanceId)
 
 // Woody
 // const instanceId = "d6d1a2db-52b9-4abb-8bea-f2d0537432e2"
@@ -16,21 +16,23 @@ console.log("Viewer - instance_id from url", instance_id)
 // const instanceId = "38df5a6a-0b90-45f6-89eb-b831a3db555d"
 
 try {
-  const instanceId = instance_id
-  await Cargo.connect(instanceId)
+  if (instanceId) {
+    await Cargo.connect(instanceId)
+  } else {
+    throw new Error("Missing instanceId")
+  }
 } catch (err) {
   console.log("ERR0R")
   console.log(err)
 }
 
+
 console.log("test")
 setTimeout(() => {
 
   Cargo.echo()
-  // Cargo.disconnect()
 
 }, 2000)
-
 
 
 

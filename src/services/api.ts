@@ -18,7 +18,7 @@ export const getTelemetry = async function(instanceId: string) {
       throw new Error("response not ok")
     }
 
-    const data = response.json()
+    const data = await response.json()
     const first = data[0]
 
     return {

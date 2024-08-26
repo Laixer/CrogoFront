@@ -49,6 +49,7 @@ export const stopAllMotion = function () {
   if (!isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to stop motion without active connection")
+    return
   }
 
   // TODO: As yet, Motion is not implemented
@@ -60,6 +61,7 @@ export const resumeAllMotion = function () {
   if (!isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to stop motion without active connection")
+    return
   }
 
   send(Motion.resume_all())
@@ -70,6 +72,7 @@ export const straightDrive = function (value: number) {
   if (!isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to stop motion without active connection")
+    return
   }
 
   send(Motion.straight_drive(value))
@@ -102,6 +105,7 @@ export const engineRequestRPM = function (rpm: number) {
   if (!isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to stop motion without active connection")
+    return
   }
 
   send(Engine.request_rpm(rpm))
@@ -112,6 +116,7 @@ export const controlLights = function (on: boolean) {
   if (!isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to stop motion without active connection")
+    return
   }
 
   // TODO: We may want to wrap this into a ControlMethod or similar 
@@ -123,6 +128,7 @@ export const echo = function () {
   if (!isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to stop motion without active connection")
+    return
   }
 
   send(new Echo(BigInt(Date.now())))
