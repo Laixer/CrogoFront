@@ -47,9 +47,9 @@ Cargo.subscribe("connectionStateChange", (state: RTCPeerConnectionState) => {
   }
 })
 
-// (current) Possible states: "closing"
+// (current) Possible states: "closed" or "closing"
 Cargo.subscribe("channelStateChange", (state: string) => {
-  if (state === 'closing') {
+  if (['closed', 'closing'].includes(state)) {
     if (timeoutReference) {
       clearTimeout(timeoutReference)
     }

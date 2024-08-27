@@ -37,7 +37,7 @@ Cargo.subscribe("connectionStateChange", (state: RTCPeerConnectionState) => {
 })
 
 Cargo.subscribe("channelStateChange", (state: string) => {
-  if (state === 'closing') {
+  if (['closed', 'closing'].includes(state)) {
     echoMS.value = 0
   }
 })

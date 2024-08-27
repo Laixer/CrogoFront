@@ -90,6 +90,15 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           }
         }
       }
+      CommandChannel.onclose = (event) => {
+        console.log("CommandChannel close", event)
+
+        if (Array.isArray(subscriptions['channelStateChange'])) {
+          for (let hander of subscriptions["channelStateChange"]) {
+            hander('close')
+          }
+        }
+      }
 
       // TODO: separate signal on receive message
       // Signal channel is only for receiving messages
@@ -110,7 +119,16 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           }
         }
       }
-    
+      SignalChannel.onclose = (event) => {
+        console.log("SignalChannel close", event)
+
+        if (Array.isArray(subscriptions['channelStateChange'])) {
+          for (let hander of subscriptions["channelStateChange"]) {
+            hander('close')
+          }
+        }
+      }
+
       // Resolve the promise when the connection is established
       WebRTCConnection.onconnectionstatechange = (event: Event) => {
         console.log("WebRTC - connection state change", event)
