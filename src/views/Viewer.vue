@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import Cargo from '@/services/cargo.js';
+import Cargo, { disconnect } from '@/services/cargo.js';
 import { onMounted } from 'vue';
 
 import Ping from '@/components/Ping.vue'
 import RPM from '@/components/RPM.vue'
 import EmergencyButton from '@/components/EmergencyButton.vue'
 import StopMotionButton from '@/components/StopMotionButton.vue'
+import DisconnectButton from '@/components/DisconnectButton.vue'
 import StopMotionWarning from '@/components/StopMotionWarning.vue'
+import ConnectionWarning from '@/components/ConnectionWarning.vue'
 
 const urlParams = new URLSearchParams(window.location.search)
 const instanceId = urlParams.get('id')
@@ -38,6 +40,7 @@ setTimeout(() => {
   // Cargo.reboot()
   // Cargo.echo()
   // Cargo.engineRequestRPM(800)
+  // Cargo.disconnect()
 
 }, 2000)
 
@@ -56,6 +59,7 @@ onMounted(() => {
     <video id="remoteVideo" playsinline autoplay muted></video>
 
     <div class="overlay center top bottom left right">
+      <ConnectionWarning />
       <StopMotionWarning />
     </div>
 
@@ -68,6 +72,7 @@ onMounted(() => {
         class="flex column justify-end align-end mt-1" 
         style="color: black">
         <StopMotionButton />
+        <DisconnectButton class="mt-1" />
       </div>
     </div>
 
@@ -83,6 +88,11 @@ onMounted(() => {
 .videoContainer {
   position: relative;
   display: flex;
+  min-width: 1280px;
+  min-height: 720px;
+  max-width: 100vw;
+  max-height: 100vh;
+  overflow: visible;
 }
 
 .overlay {

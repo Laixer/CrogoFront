@@ -27,6 +27,21 @@ Cargo.subscribe(MessageType.ECHO, (event: Echo) => {
   echoMS.value = Date.now() - Number(event.payload)
 })
 
+/**
+ * Clear the latency value upon diconnect
+ */
+Cargo.subscribe("connectionStateChange", (state: RTCPeerConnectionState) => {
+  if (['closed', 'disconnected', 'failed'].includes(state)) {
+    echoMS.value = 0
+  }
+})
+
+Cargo.subscribe("channelStateChange", (state: string) => {
+  if (state === 'closing') {
+    echoMS.value = 0
+  }
+})
+
 const intervalReferenceId = setInterval(() => {
   Cargo.echo()
 }, 1000);
@@ -42,7 +57,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="Ping">
     <div class="Ping__figure">
-      {{ echoMS }}
+      {{ echoMS === 0 ? '-': echoMS }}
     </div>
     <SignalBars :bars="signalStrength" />
   </div>

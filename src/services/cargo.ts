@@ -58,7 +58,7 @@ export const resumeAllMotion = function () {
 
   if (!isConnected) {
     // Note: still trying, due to importance of command 
-    console.error("Cargo - Trying to stop motion without active connection")
+    console.error("Cargo - Trying to resume motion without active connection")
     return
   }
 
@@ -69,7 +69,7 @@ export const straightDrive = function (value: number) {
 
   if (!isConnected) {
     // Note: still trying, due to importance of command 
-    console.error("Cargo - Trying to stop motion without active connection")
+    console.error("Cargo - Trying to straigth drive without active connection")
     return
   }
 
@@ -92,7 +92,7 @@ export const engineShutdown = function () {
 
   if (!isConnected) {
     // Note: still trying, due to importance of command 
-    console.error("Cargo - Trying to stop motion without active connection")
+    console.error("Cargo - Trying to shut down the engine without active connection")
   }
 
   send(Engine.shutdown())
@@ -102,7 +102,7 @@ export const engineRequestRPM = function (rpm: number) {
 
   if (!isConnected) {
     // Note: still trying, due to importance of command 
-    console.error("Cargo - Trying to stop motion without active connection")
+    console.error("Cargo - Trying to change rpm without active connection")
     return
   }
 
@@ -113,7 +113,7 @@ export const controlLights = function (on: boolean) {
 
   if (!isConnected) {
     // Note: still trying, due to importance of command 
-    console.error("Cargo - Trying to stop motion without active connection")
+    console.error("Cargo - Trying to control lights without active connection")
     return
   }
 
@@ -125,7 +125,7 @@ export const echo = function () {
 
   if (!isConnected) {
     // Note: still trying, due to importance of command 
-    console.error("Cargo - Trying to stop motion without active connection")
+    console.error("Cargo - Trying to echo without active connection")
     return
   }
 
