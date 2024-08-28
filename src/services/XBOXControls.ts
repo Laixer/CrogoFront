@@ -1,4 +1,5 @@
 
+import {radial, raw} from 'gamepad-api-mappings';
 
 
 class GamePadState {
@@ -10,15 +11,21 @@ class GamePadState {
    */
   lastKnownState = {
     buttons: {
-      [XBOXControls.BUTTONS.B] : false
+      [XBOXControls.BUTTONS.A]: false,
+      [XBOXControls.BUTTONS.B]: false,
+      [XBOXControls.BUTTONS.X]: false,
+      [XBOXControls.BUTTONS.Y]: false
     },
-    axes: []
+    axes: {
+      [XBOXControls.AXIS.LEFTX]: 0,
+      [XBOXControls.AXIS.LEFTY]: 0,
+      [XBOXControls.AXIS.RIGHTX]: 0,
+      [XBOXControls.AXIS.RIGHTY]: 0,
+    }
   }
 
   constructor(gamepad: Gamepad) {
     this.gamepad = gamepad
-
-    
   }
 }
 
@@ -33,7 +40,10 @@ export class XBOXControls {
   }
 
   static AXIS = {
-    'LEFT': ''
+    'LEFTX': 0,
+    'LEFTY': 1,
+    'RIGHTX': 2,
+    'RIGHTY': 3
   }
 
 
@@ -116,6 +126,9 @@ export class XBOXControls {
       return 
     }
 
+
+
+
     // Go through every connected gamepad. Generally just 1...
     for(let gamepad of gamepads) {
       this.checkGamePadState(gamepad)
@@ -133,8 +146,8 @@ export class XBOXControls {
    * Check the button and axis states of the gamepad
    */
   checkGamePadState(gamepad: Gamepad) {
-    this.checkButtonState(gamepad, this.connectedGamepads[gamepad.index])
-    this.checkAxisState(gamepad, this.connectedGamepads[gamepad.index])
+    this.checkButtonState(gamepad.buttons, this.connectedGamepads[gamepad.index])
+    this.checkAxisState(gamepad.axes, this.connectedGamepads[gamepad.index])
   }
 
   /**
@@ -143,20 +156,25 @@ export class XBOXControls {
    * 
    * @param gamepad 
    */
-  checkButtonState(gamepad: Gamepad, state: GamePadState) {
+  checkButtonState(buttons: ReadonlyArray<GamepadButton>, state: GamePadState) {
     
     if (
-      gamepad.buttons[XBOXControls.BUTTONS.B]?.pressed !== state.lastKnownState.buttons[XBOXControls.BUTTONS.B]
+      buttons[XBOXControls.BUTTONS.B]?.pressed !== state.lastKnownState.buttons[XBOXControls.BUTTONS.B]
     ) {
-      state.lastKnownState.buttons[XBOXControls.BUTTONS.B] = gamepad.buttons[XBOXControls.BUTTONS.B]?.pressed
+      state.lastKnownState.buttons[XBOXControls.BUTTONS.B] = buttons[XBOXControls.BUTTONS.B]?.pressed
 
       // emit event
-      console.log("XBOXControls", 'B', state.lastKnownState.buttons[XBOXControls.BUTTONS.B])
-    } 
+      console.log("XBOXControls", XBOXControls.BUTTONS.B, state.lastKnownState.buttons[XBOXControls.BUTTONS.B])
+    }
   }
 
-  checkAxisState(gamepad: Gamepad, state: GamePadState) {
+  checkAxisState(axes: ReadonlyArray<number>, state: GamePadState) {
+    console.log(axes)
 
+    // Left
+    const coord = {x: axes[0], y: axes[1]};
+    let force = radial(coord, 0.2, raw);
+    console.log(force.x, force.y);
   }
 }
 

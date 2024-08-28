@@ -30,7 +30,7 @@ new XBOXControls()
 
 try {
   if (instanceId) {
-    await Cargo.connect(instanceId)
+    // await Cargo.connect(instanceId)
   } else {
     throw new Error("Missing instanceId")
   }
