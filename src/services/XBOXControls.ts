@@ -131,7 +131,9 @@ export class XBOXControls {
 
     // Go through every connected gamepad. Generally just 1...
     for(let gamepad of gamepads) {
-      this.checkGamePadState(gamepad)
+      if (gamepad) {
+        this.checkGamePadState(gamepad)
+      }
     }
 
     /**
@@ -146,7 +148,7 @@ export class XBOXControls {
    * Check the button and axis states of the gamepad
    */
   checkGamePadState(gamepad: Gamepad) {
-    this.checkButtonState(gamepad.buttons, this.connectedGamepads[gamepad.index])
+    this.checkButtonState(gamepad.buttons, this.connectedGamepads[gamepad.index].lastKnownState.buttons)
     this.checkAxisState(gamepad.axes, this.connectedGamepads[gamepad.index])
   }
 
@@ -156,25 +158,43 @@ export class XBOXControls {
    * 
    * @param gamepad 
    */
-  checkButtonState(buttons: ReadonlyArray<GamepadButton>, state: GamePadState) {
+  checkButtonState(buttons: ReadonlyArray<GamepadButton>, buttonState: Record<string, Boolean>) {
     
     if (
-      buttons[XBOXControls.BUTTONS.B]?.pressed !== state.lastKnownState.buttons[XBOXControls.BUTTONS.B]
+      buttons[XBOXControls.BUTTONS.B]?.pressed !== buttonState[XBOXControls.BUTTONS.B]
     ) {
-      state.lastKnownState.buttons[XBOXControls.BUTTONS.B] = buttons[XBOXControls.BUTTONS.B]?.pressed
+      buttonState[XBOXControls.BUTTONS.B] = buttons[XBOXControls.BUTTONS.B]?.pressed
 
-      // emit event
-      console.log("XBOXControls", XBOXControls.BUTTONS.B, state.lastKnownState.buttons[XBOXControls.BUTTONS.B])
+      // TODO: emit event
+      console.log("XBOXControls", XBOXControls.BUTTONS.B, buttonState[XBOXControls.BUTTONS.B])
     }
   }
 
+  scaleAxisValue(axisValue: number) {
+    // Ensure the input is within the [-1, 1] range
+    axisValue = Math.max(-1, Math.min(1, axisValue));
+  
+    // Scale the value
+    return Math.round(axisValue * 32000);
+  }
+
   checkAxisState(axes: ReadonlyArray<number>, state: GamePadState) {
-    console.log(axes)
+    // console.log(axes)
 
     // Left
     const coord = {x: axes[0], y: axes[1]};
     let force = radial(coord, 0.2, raw);
-    console.log(force.x, force.y);
+    force.x = this.scaleAxisValue(force.x)
+    force.y = this.scaleAxisValue(force.y)
+
+    if (state.lastKnownState.axes[XBOXControls.AXIS.LEFTX] !== force.x) {
+      state.lastKnownState.axes[XBOXControls.AXIS.LEFTX] = force.x
+      console.log("X", state.lastKnownState.axes[XBOXControls.AXIS.LEFTX])
+    } 
+    if (state.lastKnownState.axes[XBOXControls.AXIS.LEFTY] !== force.y) {
+      state.lastKnownState.axes[XBOXControls.AXIS.LEFTY] = force.y
+      console.log("Y", state.lastKnownState.axes[XBOXControls.AXIS.LEFTY])
+    }
   }
 }
 
