@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { onBeforeUnmount, ref, computed, type Ref, type ComputedRef } from 'vue';
+import { onBeforeMount, onBeforeUnmount, ref, computed, type Ref, type ComputedRef } from 'vue';
 import Cargo from '@/services/cargo.js';
 import { MessageType } from "@/services/WebRTC/commands/index"
 import { Echo } from "@/services/WebRTC/commands/echo"
@@ -16,6 +16,7 @@ const tresholds = [
   225,
   275
 ]
+let intervalReferenceId: ReturnType<typeof setInterval>|undefined = undefined
 
 const signalStrength: ComputedRef<number> = computed(() => {
   if (echoMS.value === 0) return 0
@@ -33,23 +34,37 @@ Cargo.subscribe(MessageType.ECHO, (event: Echo) => {
 Cargo.subscribe("connectionStateChange", (state: RTCPeerConnectionState) => {
   if (['closed', 'disconnected', 'failed'].includes(state)) {
     echoMS.value = 0
+    stopPing()
   }
 })
 
 Cargo.subscribe("channelStateChange", (state: string) => {
   if (['closed', 'closing'].includes(state)) {
     echoMS.value = 0
+    stopPing()
   }
 })
 
-const intervalReferenceId = setInterval(() => {
-  Cargo.echo()
-}, 1000);
-
-onBeforeUnmount(() => {
+const startPing = function startPing() {
+  intervalReferenceId = setInterval(() => {
+    Cargo.echo()
+  }, 1000);
+}
+const stopPing = function stopPing() {
   if (intervalReferenceId) {
     clearInterval(intervalReferenceId)
   }
+}
+
+onBeforeMount(() => {
+  if (Cargo.isConnected()) {
+    startPing()
+  }
+})
+
+
+onBeforeUnmount(() => {
+  stopPing()
 })
 
 </script>
