@@ -5,19 +5,23 @@ import { Control, ControlType } from './WebRTC/commands/controls';
 import { Actuator, Motion } from './WebRTC/commands/motion';
 import { Echo } from './WebRTC/commands/echo';
 import { RebootCommand, DisconnectRTCCommand } from './websocket/commands/state';
+import { connectController as connectGamePadController } from '@/services/Gamepad/index.js';
 
 let connectedUuid: string|null = null
-let isConnected = false
+let _isConnected = false
 
 /**
  * Establish a Websocket & RTC Connection to a specific Cargo unit
  */
 export const connect = async function connect(uuid: string) {
 
-  if (isConnected) {
+  if (_isConnected) {
     console.log(`Cargo - is already connected`, connectedUuid)
     throw new Error(`Cargo - is already connected - ${connectedUuid}`)
   }
+
+  // Connect the GamePad controller
+  connectGamePadController()
 
   console.log("Cargo - connecting", uuid)
 
@@ -38,15 +42,21 @@ export const connect = async function connect(uuid: string) {
       throw err
     })
 
+
   console.log("Cargo - WebRTC connection established")
-  isConnected = true
+  _isConnected = true
   connectedUuid = uuid
+}
+
+export const isConnected = function() {
+  return !! _isConnected
 }
 
 
 export const stopAllMotion = function () {
+  console.log("Stop all motion")
 
-  if (!isConnected) {
+  if (!_isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to stop motion without active connection")
   }
@@ -56,7 +66,7 @@ export const stopAllMotion = function () {
 
 export const resumeAllMotion = function () {
 
-  if (!isConnected) {
+  if (!_isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to resume motion without active connection")
     return
@@ -67,7 +77,7 @@ export const resumeAllMotion = function () {
 
 export const straightDrive = function (value: number) {
 
-  if (!isConnected) {
+  if (!_isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to straigth drive without active connection")
     return
@@ -90,7 +100,7 @@ export const changeBoom = function() {
 
 export const engineShutdown = function () {
 
-  if (!isConnected) {
+  if (!_isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to shut down the engine without active connection")
   }
@@ -100,7 +110,7 @@ export const engineShutdown = function () {
 
 export const engineRequestRPM = function (rpm: number) {
 
-  if (!isConnected) {
+  if (!_isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to change rpm without active connection")
     return
@@ -111,7 +121,7 @@ export const engineRequestRPM = function (rpm: number) {
 
 export const controlLights = function (on: boolean) {
 
-  if (!isConnected) {
+  if (!_isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to control lights without active connection")
     return
@@ -123,7 +133,7 @@ export const controlLights = function (on: boolean) {
 
 export const echo = function () {
 
-  if (!isConnected) {
+  if (!_isConnected) {
     // Note: still trying, due to importance of command 
     console.error("Cargo - Trying to echo without active connection")
     return
@@ -142,12 +152,26 @@ export const disconnect = function() {
   sendCommand(new DisconnectRTCCommand())
 }
 
+export const motionChange = function(actuator: Actuator, value: number) {
+
+  if (!_isConnected) {
+    console.error("Cargo - Trying to change motion without active connection")
+    return
+  }
+
+  send(Motion.change([{
+    actuator,
+    value
+  }]))
+}
 
 
 export default {
   connect,
+  isConnected,
   stopAllMotion,
   resumeAllMotion,
+  motionChange,
   straightDrive,
   controlLights,
   engineShutdown,

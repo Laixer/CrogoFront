@@ -1,52 +1,88 @@
 
 import {radial, raw} from 'gamepad-api-mappings';
 
+export enum Axis {
+  'LEFTX' = 0,
+  'LEFTY' = 1,
+  'RIGHTX' = 2,
+  'RIGHTY' = 3
+}
+
+// TODO: Add all buttons
+// TODO: for ... in  issue with mixed enum key/values
+export enum Button {
+  'A' = 0,
+  'B' = 1,
+  'X' = 2,
+  'Y' = 3
+  // ... 15
+}
+
+export class ControllerEvent extends Event {}
+
+export class AxisEvent extends ControllerEvent {
+  axis: Axis
+  value: number
+
+  constructor(axis: Axis, value: number) {
+    super('AxisEvent')
+
+    this.axis = axis
+    this.value = value
+  }
+}
+
+export class ButtonEvent extends ControllerEvent {
+  btn: Button
+  pressed: boolean
+
+  constructor(btn: Button, pressed: boolean) {
+    super('ButtonEvent')
+
+    this.btn = btn
+    this.pressed = pressed
+  }
+}
 
 class GamePadState {
 
-  gamepad: Gamepad|Boolean
+  gamepad: Gamepad
 
   /**
    * Track the last known state so we can emit changes to the state
    */
-  lastKnownState = {
-    buttons: {
-      [XBOXControls.BUTTONS.A]: false,
-      [XBOXControls.BUTTONS.B]: false,
-      [XBOXControls.BUTTONS.X]: false,
-      [XBOXControls.BUTTONS.Y]: false
-    },
-    axes: {
-      [XBOXControls.AXIS.LEFTX]: 0,
-      [XBOXControls.AXIS.LEFTY]: 0,
-      [XBOXControls.AXIS.RIGHTX]: 0,
-      [XBOXControls.AXIS.RIGHTY]: 0,
-    }
+  lastKnownState: {
+    buttons: Record<number, boolean>,
+    axes: Record<number, number>
+  } = {
+    buttons: {},
+    axes: {}
   }
 
   constructor(gamepad: Gamepad) {
     this.gamepad = gamepad
+
+    for (let btn in Object.keys(Button)) {
+      console.log("btn init state...", btn, false)
+      this.lastKnownState.buttons[btn] = false
+    }
+    
+    for (let axis in Object.keys(Axis)) {
+      console.log("axis init state...", axis, 0)
+      this.lastKnownState.axes[axis] = 0
+    }
   }
 }
 
 
 export class XBOXControls {
 
-  static BUTTONS = {
-    'A': 0,
-    'B': 1,
-    'X': 2,
-    'Y': 3
-  }
-
-  static AXIS = {
-    'LEFTX': 0,
-    'LEFTY': 1,
-    'RIGHTX': 2,
-    'RIGHTY': 3
-  }
-
-
+  /**
+   * The axis deadzone 
+   *  See: https://medium.com/@_Gaeel_/input-is-hard-deadzones-73426e9608d3
+   */
+  deadzone = 0.2
+  
   /**
    * Whether the gamepad state is being monitored
    *  Switches on upon connecting a gamepad controler
@@ -59,6 +95,14 @@ export class XBOXControls {
    *  This allows us to ignore repeat states and emit only (meaningful) state changes
    */
   connectedGamepads: Record<number, GamePadState> = {}
+
+  /**
+   * The subscription handlers
+   */
+  subscriptions: Record<'axis'|'btn', Function[]>  = {
+    btn: [],
+    axis: []
+  }
 
   /**
    * Keep track of connected gamepads 
@@ -126,9 +170,6 @@ export class XBOXControls {
       return 
     }
 
-
-
-
     // Go through every connected gamepad. Generally just 1...
     for(let gamepad of gamepads) {
       if (gamepad) {
@@ -143,57 +184,75 @@ export class XBOXControls {
     requestAnimationFrame(this.checkGamePadStatesLoop.bind(this))
   }
 
-
   /**
    * Check the button and axis states of the gamepad
    */
   checkGamePadState(gamepad: Gamepad) {
     this.checkButtonState(gamepad.buttons, this.connectedGamepads[gamepad.index].lastKnownState.buttons)
-    this.checkAxisState(gamepad.axes, this.connectedGamepads[gamepad.index])
+    this.checkAxisState(gamepad.axes, this.connectedGamepads[gamepad.index].lastKnownState.axes)
   }
 
   /**
-   * 
-   * TODO: Currently only considers // Button 1: B
-   * 
-   * @param gamepad 
+   * Detect changes in button states
    */
-  checkButtonState(buttons: ReadonlyArray<GamepadButton>, buttonState: Record<string, Boolean>) {
-    
-    if (
-      buttons[XBOXControls.BUTTONS.B]?.pressed !== buttonState[XBOXControls.BUTTONS.B]
-    ) {
-      buttonState[XBOXControls.BUTTONS.B] = buttons[XBOXControls.BUTTONS.B]?.pressed
+  checkButtonState(buttons: ReadonlyArray<GamepadButton>, buttonState: Record<string, boolean>) {
+    for (let btn in Object.keys(Button)) {
+      if (buttons[btn]?.pressed !== buttonState[btn]) {
+        buttonState[btn] = buttons[btn]?.pressed
 
-      // TODO: emit event
-      console.log("XBOXControls", XBOXControls.BUTTONS.B, buttonState[XBOXControls.BUTTONS.B])
+        // YaY for TS
+        console.log("btn", btn, buttonState[btn])
+        this.emit('btn', new ButtonEvent(Number(btn), buttonState[btn]))
+      }
+    }
+  }
+  
+  /**
+   * Detect change in axis. Uses 'gamepad-api-mappings' to avoid deadzone
+   */
+  checkAxisState(axes: ReadonlyArray<number>, axisState: Record<string, number>) {
+    for(
+      let set of [
+        { x: Axis.LEFTX, y: Axis.LEFTY },
+        { x: Axis.RIGHTX, y: Axis.RIGHTY }
+      ]
+    ) {
+      const coord = {x: axes[set.x], y: axes[set.y]};
+      let force = radial(coord, 0.2, raw);
+
+      if (axisState[set.x] !== force.x) {
+        axisState[set.x] = force.x
+        this.emit('axis', new AxisEvent(Number(set.x), axisState[set.x]))
+      } 
+
+      if (axisState[set.y] !== force.y) {
+        axisState[set.y] = force.y
+        this.emit('axis', new AxisEvent(Number(set.y), axisState[set.y]))
+      }
     }
   }
 
-  scaleAxisValue(axisValue: number) {
-    // Ensure the input is within the [-1, 1] range
-    axisValue = Math.max(-1, Math.min(1, axisValue));
-  
-    // Scale the value
-    return Math.round(axisValue * 32000);
+  /**
+   * Add a subscription to one of the channels
+   */
+  subscribe(channel: 'btn'|'axis', handler: Function ) {
+    this.subscriptions[channel].push(handler)
+    return () => this.unssubscribe(channel, handler)
   }
 
-  checkAxisState(axes: ReadonlyArray<number>, state: GamePadState) {
-    // console.log(axes)
+  /**
+   * Remove a subscription from one of the channels
+   */
+  unssubscribe(channel: 'btn'|'axis', handler: Function ) {
+    this.subscriptions[channel] = this.subscriptions[channel].filter((sub) => sub !== handler)
+  }
 
-    // Left
-    const coord = {x: axes[0], y: axes[1]};
-    let force = radial(coord, 0.2, raw);
-    force.x = this.scaleAxisValue(force.x)
-    force.y = this.scaleAxisValue(force.y)
-
-    if (state.lastKnownState.axes[XBOXControls.AXIS.LEFTX] !== force.x) {
-      state.lastKnownState.axes[XBOXControls.AXIS.LEFTX] = force.x
-      console.log("X", state.lastKnownState.axes[XBOXControls.AXIS.LEFTX])
-    } 
-    if (state.lastKnownState.axes[XBOXControls.AXIS.LEFTY] !== force.y) {
-      state.lastKnownState.axes[XBOXControls.AXIS.LEFTY] = force.y
-      console.log("Y", state.lastKnownState.axes[XBOXControls.AXIS.LEFTY])
+  /**
+   * Emit an event to all handlers over a channel
+   */
+  emit(channel: 'btn'|'axis', event: ButtonEvent|AxisEvent) {
+    for (let handler of this.subscriptions[channel]) {
+      handler(event)
     }
   }
 }

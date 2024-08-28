@@ -50,9 +50,9 @@ export const onConnectionStateChange = function onConnectionStateChange(event: E
   console.log("onConnectionStateChange", WebRTCConnection?.connectionState, Date.now())
 
   if (Array.isArray(subscriptions['connectionStateChange'])) {
-    for (let hander of subscriptions["connectionStateChange"]) {
+    for (let handler of subscriptions["connectionStateChange"]) {
       // RTCPeerConnectionState: "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new"
-      hander(WebRTCConnection?.connectionState, event)
+      handler(WebRTCConnection?.connectionState, event)
     }
   }
 }
@@ -84,8 +84,8 @@ export const initiateRTCConnection = function initiateRTCConnection() {
         console.log("CommandChannel closing", event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let hander of subscriptions["channelStateChange"]) {
-            hander('closing')
+          for (let handler of subscriptions["channelStateChange"]) {
+            handler('closing')
           }
         }
       }
@@ -93,8 +93,8 @@ export const initiateRTCConnection = function initiateRTCConnection() {
         console.log("CommandChannel close", event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let hander of subscriptions["channelStateChange"]) {
-            hander('close')
+          for (let handler of subscriptions["channelStateChange"]) {
+            handler('close')
           }
         }
       }
@@ -113,8 +113,8 @@ export const initiateRTCConnection = function initiateRTCConnection() {
         console.log("SignalChannel closing", event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let hander of subscriptions["channelStateChange"]) {
-            hander('closing')
+          for (let handler of subscriptions["channelStateChange"]) {
+            handler('closing')
           }
         }
       }
@@ -122,8 +122,8 @@ export const initiateRTCConnection = function initiateRTCConnection() {
         console.log("SignalChannel close", event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let hander of subscriptions["channelStateChange"]) {
-            hander('close')
+          for (let handler of subscriptions["channelStateChange"]) {
+            handler('close')
           }
         }
       }
@@ -138,8 +138,8 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = onConnectionStateChange)
           
           if (Array.isArray(subscriptions['connectionStateChange'])) {
-            for (let hander of subscriptions["connectionStateChange"]) {
-              hander(WebRTCConnection?.connectionState, event)
+            for (let handler of subscriptions["connectionStateChange"]) {
+              handler(WebRTCConnection?.connectionState, event)
             }
           }
 
@@ -164,8 +164,8 @@ export const initiateRTCConnection = function initiateRTCConnection() {
                     console.log("transport state", state, Date.now())
 
                     if (Array.isArray(subscriptions['channelStateChange'])) {
-                      for (let hander of subscriptions["channelStateChange"]) {
-                        hander(state)
+                      for (let handler of subscriptions["channelStateChange"]) {
+                        handler(state)
                       }
                     }
                   }
@@ -205,8 +205,8 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = null)
           
           if (Array.isArray(subscriptions['connectionStateChange'])) {
-            for (let hander of subscriptions["connectionStateChange"]) {
-              hander(WebRTCConnection?.connectionState, event)
+            for (let handler of subscriptions["connectionStateChange"]) {
+              handler(WebRTCConnection?.connectionState, event)
             }
           }
 
@@ -333,8 +333,8 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
 
   // Generic handlers
   if (Array.isArray(subscriptions["*"])) {
-    for (let hander of subscriptions["*"]) {
-      hander(event)
+    for (let handler of subscriptions["*"]) {
+      handler(event)
     }
   }
 
@@ -346,8 +346,8 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
       
       // Publish event to handlers
       if (Array.isArray(subscriptions[MessageType.ECHO])) {
-        for (let hander of subscriptions[MessageType.ECHO]) {
-          hander(echo)
+        for (let handler of subscriptions[MessageType.ECHO]) {
+          handler(echo)
         }
       }
 
@@ -365,8 +365,8 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
 
       // Publish event to handlers
       if (Array.isArray(subscriptions[MessageType.ENGINE])) {
-        for (let hander of subscriptions[MessageType.ENGINE]) {
-          hander(engine)
+        for (let handler of subscriptions[MessageType.ENGINE]) {
+          handler(engine)
         }
       }
       break
@@ -423,6 +423,8 @@ export const setRemoteDescription = async function setRemoteDescription(descript
 
 /**
  * Subsribe to WebRTC events
+ * TODO: Refactor subscribe, etc to XBOXControls structure ?
+ * TODO: Maybe create generic PubSub class ?
  */
 export const subscribe = function(channel: MessageType|"*"|"connectionStateChange"|"channelStateChange", handler: Function) {
   subscriptions[channel] = subscriptions[channel] || []

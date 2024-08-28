@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import Cargo from '@/services/cargo.js';
-import { XBOXControls } from '@/services/XBOXControls'
 
 import Ping from '@/components/Ping.vue'
 import RPM from '@/components/RPM.vue'
@@ -17,8 +16,6 @@ console.log("Viewer - instance_id from url", instanceId)
 
 const enableOverlay = false
 
-new XBOXControls()
-
 // Woody
 // const instanceId = "d6d1a2db-52b9-4abb-8bea-f2d0537432e2"
 
@@ -27,6 +24,16 @@ new XBOXControls()
 
 // Volvo
 // const instanceId = "38df5a6a-0b90-45f6-89eb-b831a3db555d"
+
+setTimeout(() => {
+  console.log("timeout")
+
+  // Cargo.reboot()
+  // Cargo.echo()
+  // Cargo.engineRequestRPM(800)
+  // Cargo.disconnect()
+
+}, 2000)
 
 try {
   if (instanceId) {
@@ -40,14 +47,6 @@ try {
 }
 
 
-setTimeout(() => {
-
-  // Cargo.reboot()
-  // Cargo.echo()
-  // Cargo.engineRequestRPM(800)
-  // Cargo.disconnect()
-
-}, 2000)
 
 
 
