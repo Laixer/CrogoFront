@@ -20,9 +20,6 @@ export const connect = async function connect(uuid: string) {
     throw new Error(`Cargo - is already connected - ${connectedUuid}`)
   }
 
-  // Connect the GamePad controller
-  connectGamePadController()
-
   console.log("Cargo - connecting", uuid)
 
   // initiateRTCConnection()
@@ -42,10 +39,12 @@ export const connect = async function connect(uuid: string) {
       throw err
     })
 
-
   console.log("Cargo - WebRTC connection established")
   _isConnected = true
   connectedUuid = uuid
+
+  // Connect the GamePad controller
+  connectGamePadController()
 }
 
 export const isConnected = function() {
@@ -153,6 +152,8 @@ export const disconnect = function() {
 }
 
 export const motionChange = function(actuator: Actuator, value: number) {
+  
+  console.log(actuator, value)
 
   if (!_isConnected) {
     console.error("Cargo - Trying to change motion without active connection")

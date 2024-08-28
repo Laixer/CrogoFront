@@ -40,7 +40,7 @@ export const connectController = function() {
   })
 
   XBOXControlsInstance.subscribe('axis', function(event: AxisEvent){
-    if (ActuatorByAxis[event.axis]) {
+    if (Object.prototype.hasOwnProperty.call(ActuatorByAxis, event.axis)) {
       Cargo.motionChange(
         ActuatorByAxis[event.axis], 
         scaleAxisValue(event.value)
