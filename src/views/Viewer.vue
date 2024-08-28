@@ -14,6 +14,8 @@ const urlParams = new URLSearchParams(window.location.search)
 const instanceId = urlParams.get('id')
 console.log("Viewer - instance_id from url", instanceId)
 
+const enableOverlay = false
+
 // Woody
 // const instanceId = "d6d1a2db-52b9-4abb-8bea-f2d0537432e2"
 
@@ -58,29 +60,40 @@ onMounted(() => {
   <div class="videoContainer">
     <video id="remoteVideo" playsinline autoplay muted></video>
 
-    <div class="overlay center top bottom left right">
+    <div class="overlay flex-center top bottom left right">
       <ConnectionWarning />
       <StopMotionWarning />
     </div>
-
-    <div class="overlay top right flex column justify-end align-end mt-1 mr-1">
-      <div class="flex inline">
-        <Ping />
-        <RPM />
-      </div>
-      <div 
-        class="flex column justify-end align-end mt-1" 
-        style="color: black">
-        <StopMotionButton />
-        <DisconnectButton class="mt-1" />
-      </div>
-    </div>
-
-    <div class="overlay bottom right mb-1 mr-1">
-      <EmergencyButton />
-    </div>
     
+    <template v-if="enableOverlay">
+      <div class="overlay top right flex column justify-end align-end mt-1 mr-1">
+        <div class="flex inline">
+          <Ping class="mr-1" />
+          <RPM />
+        </div>
+        <div 
+          class="flex column justify-end align-end mt-1" 
+          style="color: black">
+          <StopMotionButton />
+          <DisconnectButton class="mt-1" />
+        </div>
+      </div>
 
+      <div class="overlay bottom right mb-1 mr-1">
+        <EmergencyButton />
+      </div>
+    </template>
+
+    <template v-else>
+      <div class="sidebar absolute top bottom flex column align-end px-1 py-1">
+        <Ping />
+        <RPM class="mt-1" />
+        <StopMotionButton class="mt-1" />
+        <DisconnectButton class="mt-1" />
+
+        <EmergencyButton class="absolute bottom right mx-1 mb-1 left right" />
+      </div>
+    </template>
   </div>
 </template>
 
@@ -94,15 +107,20 @@ onMounted(() => {
   max-height: 100vh;
   overflow: visible;
 }
+.sidebar {
+  right: -11rem;
+}
 
 .overlay {
   position: absolute;
   z-index: 2147483647;
 }
-.center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+
+.absolute {
+  position: absolute;
+}
+.relative {
+  position: relative;
 }
 
 .top {
@@ -116,6 +134,9 @@ onMounted(() => {
 }
 .right {
   right: 0;
+}
+.center {
+  margin: auto;
 }
 
 #remoteVideo {
@@ -141,5 +162,10 @@ onMounted(() => {
   flex-grow: 1;
 }
 
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
 </style>

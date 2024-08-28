@@ -53,12 +53,12 @@ const barsClass: ComputedRef<'five-bars'|'four-bars'|'three-bars'|'two-bars'|'on
 .signal-bars {
   display: inline-block;
   height: 50px;
-  width: 80px;
+  width: 50px;
 }
 
 .signal-bars .bar {
-  width: 14%;
-  margin-left: 1%;
+  width: 18%;
+  margin-left: 2%;
   min-height: 20%;
   display: inline-block;
 }
