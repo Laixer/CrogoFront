@@ -47,7 +47,7 @@ export const isFailed = function isFailed(): boolean {
  * The connection state change handler, _after_ the connection has been established
  */
 export const onConnectionStateChange = function onConnectionStateChange(event: Event) {
-  console.log("onConnectionStateChange", WebRTCConnection?.connectionState)
+  console.log("onConnectionStateChange", WebRTCConnection?.connectionState, Date.now())
 
   if (Array.isArray(subscriptions['connectionStateChange'])) {
     for (let hander of subscriptions["connectionStateChange"]) {
@@ -73,16 +73,15 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           console.error("WebRTC video - missing stream data")
         }
       } 
-    
       // create the command channel
       // Command channel is for 2 way communication
       CommandChannel = WebRTCConnection.createDataChannel("command")
       CommandChannel.onmessage = onReceiveMessage
       CommandChannel.onerror = (event) => {
-        console.log("CommandChannel error", event)
+        console.log("CommandChannel error", event, Date.now())
       }
       CommandChannel.onclosing = (event) => {
-        console.log("CommandChannel closing", event)
+        console.log("CommandChannel closing", event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
           for (let hander of subscriptions["channelStateChange"]) {
@@ -91,7 +90,7 @@ export const initiateRTCConnection = function initiateRTCConnection() {
         }
       }
       CommandChannel.onclose = (event) => {
-        console.log("CommandChannel close", event)
+        console.log("CommandChannel close", event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
           for (let hander of subscriptions["channelStateChange"]) {
@@ -108,10 +107,10 @@ export const initiateRTCConnection = function initiateRTCConnection() {
         onReceiveMessage(event)
       }
       SignalChannel.onerror = (event) => {
-        console.log("SignalChannel error", event)
+        console.log("SignalChannel error", event, Date.now())
       }
       SignalChannel.onclosing = (event) => {
-        console.log("SignalChannel closing", event)
+        console.log("SignalChannel closing", event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
           for (let hander of subscriptions["channelStateChange"]) {
@@ -120,7 +119,7 @@ export const initiateRTCConnection = function initiateRTCConnection() {
         }
       }
       SignalChannel.onclose = (event) => {
-        console.log("SignalChannel close", event)
+        console.log("SignalChannel close", event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
           for (let hander of subscriptions["channelStateChange"]) {
@@ -131,7 +130,7 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
       // Resolve the promise when the connection is established
       WebRTCConnection.onconnectionstatechange = (event: Event) => {
-        console.log("WebRTC - connection state change", event)
+        console.log("WebRTC - connection state change", event, Date.now())
 
         if (isConnected()) {
           
@@ -144,13 +143,63 @@ export const initiateRTCConnection = function initiateRTCConnection() {
             }
           }
 
+
+        // Log stats
+        if (WebRTCConnection) {
+          WebRTCConnection
+            .getReceivers()
+            .forEach(
+              (
+                receiver: RTCRtpReceiver,
+                index: number,
+                array: RTCRtpReceiver[]
+              ) => {
+                if (receiver.track.kind !== "video") {
+                  return
+                }
+
+                // Emit video connection state changes
+                if (receiver.transport) {
+                  receiver.transport.onstatechange = function(state) {  
+                    console.log("transport state", state, Date.now())
+
+                    if (Array.isArray(subscriptions['channelStateChange'])) {
+                      for (let hander of subscriptions["channelStateChange"]) {
+                        hander(state)
+                      }
+                    }
+                  }
+                }
+
+                // TODO: Put in 100ms interval to track frames per second
+                // setTimeout(() => {
+                //   receiver.getStats().then((myStatsReport: RTCStatsReport) => {
+                //     myStatsReport.forEach(
+                //       (statValue: any, key: string, parent: RTCStatsReport) => {
+                //         if (statValue.type == "inbound-rtp") {
+                //           console.log(
+                //             "The PC stats returned the framesPerSecond value " +
+                //             statValue["framesPerSecond"] +
+                //             " while the full inbound-rtp stats reflect as " +  
+                //             JSON.stringify(statValue, null, 4)
+                //           );
+                //         }
+                //       }
+                //     );
+                //   });                
+                // }, 2000)
+                
+              }
+            );
+          }
+
           resolve(WebRTCConnection as RTCPeerConnection)
         }
 
         if (isFailed()) {
           // TODO: Show message ?
           // TODO: Auto retry ? After delay of x seconds ? 
-          console.error("WebRT - Failed connection")
+          console.error("WebRT - Failed connection", Date.now())
 
           // Remove this event handler. We only want to resolve once
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = null)
