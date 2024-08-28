@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import Cargo, { disconnect } from '@/services/cargo.js';
 import { onMounted } from 'vue';
+import Cargo from '@/services/cargo.js';
+import { XBOXControls } from '@/services/XBOXControls'
 
 import Ping from '@/components/Ping.vue'
 import RPM from '@/components/RPM.vue'
@@ -15,6 +16,8 @@ const instanceId = urlParams.get('id')
 console.log("Viewer - instance_id from url", instanceId)
 
 const enableOverlay = false
+
+new XBOXControls()
 
 // Woody
 // const instanceId = "d6d1a2db-52b9-4abb-8bea-f2d0537432e2"
