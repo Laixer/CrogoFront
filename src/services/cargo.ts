@@ -45,6 +45,16 @@ export const connect = async function connect(uuid: string) {
 
   // Connect the GamePad controller
   connectGamePadController()
+
+
+  subscribe("connectionStateChange", _registerDisconnect)
+  subscribe("channelStateChange", _registerDisconnect)
+}
+
+const _registerDisconnect = (state: string) => {
+  if (['closed', 'closing', 'disconnected', 'failed'].includes(state)) {
+    _isConnected = false
+  }
 }
 
 export const isConnected = function() {
@@ -147,6 +157,10 @@ export const reboot = function() {
 }
 
 export const disconnect = function() {
+  if (!_isConnected) {
+    console.log("No connection to disconnect")
+    return
+  }
   console.log("sending disconnect RTC command")
   sendCommand(new DisconnectRTCCommand())
 }
