@@ -1,6 +1,10 @@
 @import './base.css';
 @import './mp-util-classes.css';
 
+html, body {
+  background: #494242;
+}
+
 #app {
   margin: 0 auto;
   font-weight: normal;
