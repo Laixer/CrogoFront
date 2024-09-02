@@ -26,7 +26,9 @@ export class RTCSetupCommand extends WebSocketCommand {
     
     console.log("RTC SetupCommand", message)
 
-    setRemoteDescription(message.result)
+    if (message.result) {
+      setRemoteDescription(message.result)
+    }
   }
 }
 
@@ -53,7 +55,7 @@ export class RTCCandidateCommand extends WebSocketCommand {
   
   handleMessage(message: { result: null }) {
     if (message.result !== null) {
-      console.error("RTCCandidateCommand - Error", message)
+      console.log("RTCCandidateCommand - Error", message)
     }
   }
 }
