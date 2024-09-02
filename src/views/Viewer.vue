@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, onBeforeUnmount } from 'vue';
 import Cargo from '@/services/cargo.js';
 
 import Ping from '@/components/Ping.vue'
@@ -47,12 +47,17 @@ try {
 }
 
 
-
-
-
 onMounted(() => {
   const video = document.getElementById('remoteVideo')
   Cargo.connectVideoElement(video as HTMLVideoElement)
+})
+
+onBeforeUnmount(() => {
+  try {
+    Cargo.disconnect()
+  } catch(e) {
+    console.log("Unable to disconnect")
+  }
 })
 
 
