@@ -94,6 +94,6 @@ export const handleResponseMessage = function handleResponseMessage(event: Messa
   
   command.status = 'handled'
 
-  console.log("Websocket - message has been handled", message.id)
+  console.log("Websocket - message has been handled", message.id, message, command)
 }
 

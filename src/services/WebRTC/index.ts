@@ -402,7 +402,7 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
  */
 export const setRemoteDescription = async function setRemoteDescription(description: RTCSessionDescription) {
   try {
-    console.log("WebRTC - setting remote description")
+    console.log("WebRTC - setting remote description", description)
 
     const WebRTC = getWebRTCConnection()
     if (WebRTC === null) {
