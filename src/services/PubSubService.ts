@@ -62,6 +62,7 @@ export class PubSub {
     // register the internal logging channel
     this.registerChannel({
       identifier: 'log',
+      group: '_',
       description: 'A channel that can be used to log events on channels that have logging enabled',
       log: false
     })
@@ -100,6 +101,7 @@ export class PubSub {
 
     // Use defaults if information was missing
     channel.description = channel.description || this.channelDefaults.desciption
+    channel.group = channel.group || this.channelDefaults.group
     if (channel.log !== true && channel.log !== false) {
       channel.log = !!this.channelDefaults.log
     }
@@ -192,7 +194,8 @@ export class PubSub {
 
     if (!this.channels[identifier]) {
       this.registerChannel({
-        identifier
+        identifier,
+        group
       })
     }
 
@@ -233,7 +236,8 @@ export class PubSub {
 
     if (!this.channels[identifier]) {
       this.registerChannel({
-        identifier
+        identifier,
+        group
       })
     }
 
