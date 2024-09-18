@@ -184,12 +184,15 @@ export class PubSub {
     handler: Function,
     group?: string
   ): Function {
-    if (identifier === null && group) {
+    if ((identifier === null || identifier === '*') && group) {
       return this.subscribeToGroup(group, handler)
     }
 
     if (!identifier) {
       throw new Error('Identifier is required')
+    }
+    if (identifier === '*') {
+      throw new Error('Missing group for group subscription')
     }
 
     if (!this.channels[identifier]) {
@@ -226,12 +229,15 @@ export class PubSub {
     handler: Function,
     group?: string
   ): PubSub {
-    if (identifier === null && group) {
+    if ((identifier === null || identifier === '*') && group) {
       return this.unsubscribeFromGroup(group, handler)
     }
 
     if (!identifier) {
       throw new Error('Identifier is required')
+    }
+    if (identifier === '*') {
+      throw new Error('Missing group for group unsubscription')
     }
 
     if (!this.channels[identifier]) {
