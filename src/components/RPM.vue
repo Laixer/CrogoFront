@@ -30,6 +30,7 @@ Cargo.subscribe(MessageType.ENGINE, (event: Engine) => {
 <style>
 .RPM {
   font-size: 3rem;
+  color: var(--vt-c-text-dark-2);
   line-height: 1;
   min-width: 9rem;
   text-align: center;
