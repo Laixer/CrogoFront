@@ -105,7 +105,7 @@ export class PubSub {
     if (channel.log !== true && channel.log !== false) {
       channel.log = !!this.channelDefaults.log
     }
-    channel.subcriptions = channel.subcriptions || this.channelDefaults.subcriptions
+    channel.subcriptions = (channel.subcriptions || this.channelDefaults.subcriptions).slice()
 
     if (!Array.isArray(channel.subcriptions)) {
       throw new Error('Channel subscriptions need to be an empty array or an array of Functions')
@@ -142,7 +142,7 @@ export class PubSub {
         channel,
         // Do not allow subscriptions to be updated through this method
         {
-          subscriptions: this.channels[channel.identifier].subcriptions || []
+          subscriptions: (this.channels[channel.identifier].subcriptions || []).slice()
         }
       )
     } else {
@@ -202,9 +202,6 @@ export class PubSub {
       })
     }
 
-    // Added to satisfy typescript
-    this.channels[identifier].subcriptions = this.channels[identifier]?.subcriptions || []
-
     // Verify that the handler is a Function
     // TODO: Support Async functions
     if ({}.toString.call(handler) !== '[object Function]') {
@@ -212,7 +209,17 @@ export class PubSub {
       throw new Error(`Handler has to be a Function - ${identifier}`)
     }
 
-    this.channels[identifier].subcriptions.push(handler)
+    if (!this.channels[identifier]) {
+      // We create it, but that may go wrong
+      throw new Error(`Missing channel - ${identifier}`)
+    }
+
+    if (!Array.isArray(this.channels[identifier]?.subcriptions)) {
+      throw new Error(`Channel corrupted - ${identifier}`)
+    }
+
+    // Whatever sillyness it takes to make TS happy...
+    this?.channels?.[identifier]?.subcriptions?.push(handler)
 
     if (this.channels[identifier].log) {
       this.emit('log', new PubSubEvent(`Channel - ${identifier} - a subscription has been added`))
@@ -245,6 +252,15 @@ export class PubSub {
         identifier,
         group
       })
+    }
+
+    if (!this.channels[identifier]) {
+      // We create it, but that may go wrong
+      throw new Error(`Missing channel - ${identifier}`)
+    }
+
+    if (!Array.isArray(this.channels[identifier]?.subcriptions)) {
+      throw new Error(`Channel corrupted - ${identifier}`)
     }
 
     this.channels[identifier].subcriptions = (this.channels[identifier]?.subcriptions || []).filter(
