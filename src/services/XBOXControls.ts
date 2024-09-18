@@ -1,5 +1,7 @@
 import { radial, raw } from 'gamepad-api-mappings'
 
+import { PubSubEvent, PubSubService } from '@/services/PubSubService'
+
 export enum Axis {
   'LEFTX' = 0,
   'LEFTY' = 1,
@@ -17,7 +19,7 @@ export enum Button {
   // ... 15
 }
 
-export class ControllerEvent extends Event {}
+export class ControllerEvent extends PubSubEvent {}
 
 export class AxisEvent extends ControllerEvent {
   axis: Axis
@@ -43,7 +45,7 @@ export class ButtonEvent extends ControllerEvent {
   }
 }
 
-export class ConnectionEvent extends Event {
+export class ConnectionEvent extends ControllerEvent {
   constructor() {
     super('ConnectionEvent')
   }
@@ -99,14 +101,14 @@ export class XBOXControls {
   connectedGamepads: Record<number, GamePadState> = {}
 
   /**
-   * The subscription handlers
+   * PubSub channel identifiers
    */
-  subscriptions: Record<'axis' | 'btn' | 'connect' | 'disconnect', Function[]> = {
-    btn: [],
-    axis: [],
-    connect: [],
-    disconnect: []
-  }
+  channelIdentifiers = [
+    'gamepad.connect',
+    'gamepad.disconnect',
+    'gamepad.axis',
+    'gamepad.btn'
+  ] as const
 
   /**
    * Keep track of connected gamepads
@@ -114,6 +116,14 @@ export class XBOXControls {
   constructor() {
     window.addEventListener('gamepadconnected', this.registerGamepad.bind(this))
     window.addEventListener('gamepaddisconnected', this.unregisterGamepad.bind(this))
+
+    // Register pubsub channels
+    this.channelIdentifiers.forEach((identifier) => {
+      PubSubService.registerChannel({
+        identifier,
+        group: 'gamepad'
+      })
+    })
   }
 
   /**
@@ -139,7 +149,7 @@ export class XBOXControls {
       this.checkGamePadStatesLoop.apply(this)
     }
 
-    this.emit('connect', new ConnectionEvent())
+    this.emit('gamepad.connect', new ConnectionEvent())
   }
 
   /**
@@ -149,7 +159,7 @@ export class XBOXControls {
   unregisterGamepad(e: GamepadEvent) {
     if (this.connectedGamepads[e.gamepad.index]) {
       delete this.connectedGamepads[e.gamepad.index]
-      this.emit('disconnect', new ConnectionEvent())
+      this.emit('gamepad.disconnect', new ConnectionEvent())
     }
   }
 
@@ -166,7 +176,7 @@ export class XBOXControls {
   checkGamePadStatesLoop() {
     const gamepads = navigator
       .getGamepads()
-      // Chrome always returns 4 "gamepads", proving null values if there aren't actually 4 gamepads
+      // Chrome always returns 4 "gamepads", providing null values if there aren't actually 4 gamepads
       .filter((gamepad) => !!gamepad)
 
     // We keep actively watching as long as the navigator returns gamepads
@@ -211,7 +221,7 @@ export class XBOXControls {
 
         // YaY for TS
         console.log('btn', btn, buttonState[btn])
-        this.emit('btn', new ButtonEvent(Number(btn), buttonState[btn]))
+        this.emit('gamepad.btn', new ButtonEvent(Number(btn), buttonState[btn]))
       }
     }
   }
@@ -225,16 +235,16 @@ export class XBOXControls {
       { x: Axis.RIGHTX, y: Axis.RIGHTY }
     ]) {
       const coord = { x: axes[set.x], y: axes[set.y] }
-      let force = radial(coord, 0.2, raw)
+      const force = radial(coord, 0.2, raw)
 
       if (axisState[set.x] !== force.x) {
         axisState[set.x] = force.x
-        this.emit('axis', new AxisEvent(Number(set.x), axisState[set.x]))
+        this.emit('gamepad.axis', new AxisEvent(Number(set.x), axisState[set.x]))
       }
 
       if (axisState[set.y] !== force.y) {
         axisState[set.y] = force.y
-        this.emit('axis', new AxisEvent(Number(set.y), axisState[set.y]))
+        this.emit('gamepad.axis', new AxisEvent(Number(set.y), axisState[set.y]))
       }
     }
   }
@@ -242,27 +252,24 @@ export class XBOXControls {
   /**
    * Add a subscription to one of the channels
    */
-  subscribe(channel: 'btn' | 'axis' | 'connect' | 'disconnect', handler: Function) {
-    this.subscriptions[channel].push(handler)
-    return () => this.unssubscribe(channel, handler)
+  subscribe(channel: (typeof this.channelIdentifiers)[number], handler: Function) {
+    return PubSubService.subscribe(channel, handler)
   }
 
   /**
    * Remove a subscription from one of the channels
    */
-  unssubscribe(channel: 'btn' | 'axis' | 'connect' | 'disconnect', handler: Function) {
-    this.subscriptions[channel] = this.subscriptions[channel].filter((sub) => sub !== handler)
+  unssubscribe(channel: (typeof this.channelIdentifiers)[number], handler: Function) {
+    PubSubService.unssubscribe(channel, handler)
   }
 
   /**
    * Emit an event to all handlers over a channel
    */
   emit(
-    channel: 'btn' | 'axis' | 'connect' | 'disconnect',
+    channel: (typeof this.channelIdentifiers)[number],
     event: ButtonEvent | AxisEvent | ConnectionEvent
   ) {
-    for (let handler of this.subscriptions[channel]) {
-      handler(event)
-    }
+    PubSubService.emit(channel, event)
   }
 }

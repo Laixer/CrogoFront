@@ -9,6 +9,7 @@ import StopMotionButton from '@/components/StopMotionButton.vue'
 import DisconnectButton from '@/components/DisconnectButton.vue'
 import StopMotionWarning from '@/components/StopMotionWarning.vue'
 import ConnectionWarning from '@/components/ConnectionWarning.vue'
+import GamepadIndicator from '@/components/GamepadIndicator.vue'
 
 const urlParams = new URLSearchParams(window.location.search)
 const instanceId = urlParams.get('id')
@@ -26,7 +27,8 @@ const enableOverlay = false
 // const instanceId = "38df5a6a-0b90-45f6-89eb-b831a3db555d"
 
 setTimeout(() => {
-  console.log('timeout')
+  console.log('2000 ms na Viewer setup')
+  // console.log('timeout')
 
   // Cargo.reboot()
   // Cargo.echo()
@@ -91,6 +93,8 @@ onBeforeUnmount(() => {
         <RPM class="mt-1" />
         <StopMotionButton class="mt-1" />
         <DisconnectButton class="mt-1" />
+
+        <GamepadIndicator class="mt-1" />
 
         <EmergencyButton class="absolute bottom right mx-1 mb-1 left right" />
       </div>

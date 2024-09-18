@@ -11,6 +11,7 @@ import { Actuator, Motion } from './WebRTC/commands/motion'
 import { Echo } from './WebRTC/commands/echo'
 import { RebootCommand, DisconnectRTCCommand } from './websocket/commands/state'
 import { connectController as connectGamePadController } from '@/services/Gamepad/index.js'
+import { PubSubService } from '@/services/PubSubService'
 
 let connectedUuid: string | null = null
 let _isConnected = false
@@ -200,6 +201,7 @@ export default {
 
   // Subscribe to WebRTC events
   subscribe,
+  PubSubService,
 
   //
   changeBoom

@@ -26,9 +26,11 @@ const ActuatorByAxis = {
 }
 
 export const connectController = function () {
+  console.log('CONNECT CONTROLLER')
+
   XBOXControlsInstance = new XBOXControls()
 
-  XBOXControlsInstance.subscribe('btn', function (event: ButtonEvent) {
+  XBOXControlsInstance.subscribe('gamepad.btn', function (event: ButtonEvent) {
     if (event.btn === Button.B) {
       if (event.pressed) {
         Cargo.stopAllMotion()
@@ -38,7 +40,7 @@ export const connectController = function () {
     }
   })
 
-  XBOXControlsInstance.subscribe('axis', function (event: AxisEvent) {
+  XBOXControlsInstance.subscribe('gamepad.axis', function (event: AxisEvent) {
     if (Object.prototype.hasOwnProperty.call(ActuatorByAxis, event.axis)) {
       Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(event.value))
     }

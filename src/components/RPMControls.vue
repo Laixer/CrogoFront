@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed } from 'vue'
 import Cargo from '@/services/cargo.js'
 import Up from '@/components/icons/up.vue'
 import Down from '@/components/icons/down.vue'

@@ -101,10 +101,15 @@ export class PubSub {
 
     // Use defaults if information was missing
     channel.description = channel.description || this.channelDefaults.desciption
+
+    // TODO: Use prefix separated by . as group if not set
     channel.group = channel.group || this.channelDefaults.group
+
     if (channel.log !== true && channel.log !== false) {
       channel.log = !!this.channelDefaults.log
     }
+
+    // Slice to avoid spilling of subscriptions between channels
     channel.subcriptions = (channel.subcriptions || this.channelDefaults.subcriptions).slice()
 
     if (!Array.isArray(channel.subcriptions)) {
@@ -191,9 +196,6 @@ export class PubSub {
     if (!identifier) {
       throw new Error('Identifier is required')
     }
-    if (identifier === '*') {
-      throw new Error('Missing group for group subscription')
-    }
 
     if (!this.channels[identifier]) {
       this.registerChannel({
@@ -243,9 +245,6 @@ export class PubSub {
     if (!identifier) {
       throw new Error('Identifier is required')
     }
-    if (identifier === '*') {
-      throw new Error('Missing group for group unsubscription')
-    }
 
     if (!this.channels[identifier]) {
       this.registerChannel({
@@ -292,6 +291,13 @@ export class PubSub {
     // Go over group based subscribers
     if (channel.group && this.groupSubscriptions[channel.group]) {
       for (let handler of this.groupSubscriptions[channel.group] || []) {
+        handler(event)
+      }
+    }
+
+    // The catch all channel
+    if (this.channels['*']) {
+      for (let handler of this.channels['*']?.subcriptions || []) {
         handler(event)
       }
     }
