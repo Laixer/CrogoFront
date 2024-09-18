@@ -227,13 +227,13 @@ export class PubSub {
       this.emit('log', new PubSubEvent(`Channel - ${identifier} - a subscription has been added`))
     }
 
-    return () => this.unssubscribe(identifier, handler)
+    return () => this.unsubscribe(identifier, handler)
   }
 
   /**
    * Remove a subscription from one of the channels
    */
-  unssubscribe(
+  unsubscribe(
     identifier: keyof typeof this.channels | null,
     handler: Function,
     group?: string
