@@ -259,8 +259,8 @@ export class XBOXControls {
   /**
    * Remove a subscription from one of the channels
    */
-  unssubscribe(channel: (typeof this.channelIdentifiers)[number], handler: Function) {
-    PubSubService.unssubscribe(channel, handler)
+  unsubscribe(channel: (typeof this.channelIdentifiers)[number], handler: Function) {
+    PubSubService.unsubscribe(channel, handler)
   }
 
   /**
