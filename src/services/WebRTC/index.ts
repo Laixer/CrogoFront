@@ -1,5 +1,5 @@
 import { disconnect } from '../cargo'
-import { PubSubService } from '../PubSubService'
+import { PubSubEvent, PubSubService } from '../PubSubService'
 // import Debugger from "../Debugger";
 import { sendCommand as sendWebsocketCommand } from '../websocket'
 import { RTCCandidateCommand, RTCSetupCommand } from '../websocket/commands/setup'
@@ -40,21 +40,68 @@ export const isFailed = function isFailed(): boolean {
   return WebRTCConnection !== null && WebRTCConnection?.connectionState === 'failed'
 }
 
-/**
- * The connection state change handler, _after_ the connection has been established
- */
-export const onConnectionStateChange = function onConnectionStateChange(event: Event) {
-  console.log('onConnectionStateChange', WebRTCConnection?.connectionState, Date.now())
+export class ConnectionStateEvent extends PubSubEvent {
+  state: RTCPeerConnectionState | undefined
 
-  if (Array.isArray(subscriptions['connectionStateChange'])) {
-    for (let handler of subscriptions['connectionStateChange']) {
-      // RTCPeerConnectionState: "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new"
-      handler(WebRTCConnection?.connectionState, event)
-    }
+  constructor(state: RTCPeerConnectionState | undefined) {
+    super('ConnectionStateEvent')
+    this.state = state
+  }
+
+  // TODO: isfailed(), etc...
+}
+
+export class ChannelStateEvent extends PubSubEvent {
+  state: RTCDtlsTransportState | 'closing' | undefined
+
+  constructor(state: RTCDtlsTransportState | 'closing' | undefined) {
+    super('ChannelStateEvent')
+    this.state = state
+  }
+
+  // TODO: isfailed(), etc...
+}
+
+// MessageEvent is already taken by WebRTC
+// TODO: create MotionMessageEvent etc...
+export class IncomingMessageEvent extends PubSubEvent {
+  message: IMessage
+
+  constructor(message: IMessage) {
+    super('IncomingMessageEvent')
+    this.message = message
   }
 }
 
+/**
+ * The connection state change handler, _after_ the connection has been established
+ */
+export const onConnectionStateChange = function onConnectionStateChange() {
+  // event: Event
+  console.log('onConnectionStateChange', WebRTCConnection?.connectionState, Date.now())
+
+  PubSubService.emit(
+    'connectionStateChange',
+    new ConnectionStateEvent(WebRTCConnection?.connectionState)
+  )
+
+  // if (Array.isArray(subscriptions['connectionStateChange'])) {
+  //   for (let handler of subscriptions['connectionStateChange']) {
+  //     // RTCPeerConnectionState: "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new"
+  //     handler(WebRTCConnection?.connectionState, event)
+  //   }
+  // }
+}
+
 export const initiateRTCConnection = function initiateRTCConnection() {
+  // Register all incoming message types as a channel of the "incoming" group
+  Object.keys(lastReceivedMessagesByType).forEach((messageType) => {
+    PubSubService.registerChannel({ identifier: messageType, group: 'incoming' })
+  })
+  // Register the 2 connection channels as the 'connection' group
+  PubSubService.registerChannel({ identifier: 'connectionStateChange', group: 'connection' })
+  PubSubService.registerChannel({ identifier: 'channelStateChange', group: 'connection' })
+
   return new Promise<RTCPeerConnection>((resolve, reject) => {
     try {
       WebRTCConnection = new RTCPeerConnection(configuration)
@@ -80,20 +127,12 @@ export const initiateRTCConnection = function initiateRTCConnection() {
       CommandChannel.onclosing = (event) => {
         console.log('CommandChannel closing', event, Date.now())
 
-        if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let handler of subscriptions['channelStateChange']) {
-            handler('closing')
-          }
-        }
+        PubSubService.emit('channelStateChange', new ChannelStateEvent('closing'))
       }
       CommandChannel.onclose = (event) => {
         console.log('CommandChannel close', event, Date.now())
 
-        if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let handler of subscriptions['channelStateChange']) {
-            handler('close')
-          }
-        }
+        PubSubService.emit('channelStateChange', new ChannelStateEvent('closed'))
       }
 
       // TODO: separate signal on receive message
@@ -109,20 +148,12 @@ export const initiateRTCConnection = function initiateRTCConnection() {
       SignalChannel.onclosing = (event) => {
         console.log('SignalChannel closing', event, Date.now())
 
-        if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let handler of subscriptions['channelStateChange']) {
-            handler('closing')
-          }
-        }
+        PubSubService.emit('channelStateChange', new ChannelStateEvent('closing'))
       }
       SignalChannel.onclose = (event) => {
         console.log('SignalChannel close', event, Date.now())
 
-        if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let handler of subscriptions['channelStateChange']) {
-            handler('close')
-          }
-        }
+        PubSubService.emit('channelStateChange', new ChannelStateEvent('closed'))
       }
 
       // Resolve the promise when the connection is established
@@ -133,11 +164,10 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           // Replace this event handler. We only want to resolve once
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = onConnectionStateChange)
 
-          if (Array.isArray(subscriptions['connectionStateChange'])) {
-            for (let handler of subscriptions['connectionStateChange']) {
-              handler(WebRTCConnection?.connectionState, event)
-            }
-          }
+          PubSubService.emit(
+            'connectionStateChange',
+            new ConnectionStateEvent(WebRTCConnection?.connectionState)
+          )
 
           // Log stats
           if (WebRTCConnection) {
@@ -152,11 +182,7 @@ export const initiateRTCConnection = function initiateRTCConnection() {
                   receiver.transport.onstatechange = function (state) {
                     console.log('transport state', state, Date.now())
 
-                    if (Array.isArray(subscriptions['channelStateChange'])) {
-                      for (let handler of subscriptions['channelStateChange']) {
-                        handler(state)
-                      }
-                    }
+                    PubSubService.emit('channelStateChange', new ChannelStateEvent(this.state))
                   }
                 }
 
@@ -192,11 +218,10 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           // Remove this event handler. We only want to resolve once
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = null)
 
-          if (Array.isArray(subscriptions['connectionStateChange'])) {
-            for (let handler of subscriptions['connectionStateChange']) {
-              handler(WebRTCConnection?.connectionState, event)
-            }
-          }
+          PubSubService.emit(
+            'connectionStateChange',
+            new ConnectionStateEvent(WebRTCConnection?.connectionState)
+          )
 
           reject('connection failed')
         }
@@ -311,30 +336,20 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
 
   // Debugger.log("WebRTC - frame", frame)
 
-  // Generic handlers
-  if (Array.isArray(subscriptions['*'])) {
-    for (let handler of subscriptions['*']) {
-      handler(event)
-    }
-  }
-
   //
   switch (frame.messageType) {
     case MessageType.ECHO:
       const echo = Echo.fromBytes(event.data.slice(10))
 
-      // Publish event to handlers
-      if (Array.isArray(subscriptions[MessageType.ECHO])) {
-        for (let handler of subscriptions[MessageType.ECHO]) {
-          handler(echo)
-        }
-      }
-
+      PubSubService.emit(MessageType.ECHO, new IncomingMessageEvent(echo))
       break
+
     case MessageType.STATUS:
       const moduleStatus = ModuleStatus.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       // console.log(moduleStatus)
+      PubSubService.emit(MessageType.STATUS, new IncomingMessageEvent(moduleStatus))
       break
+
     case MessageType.ENGINE:
       const engine = Engine.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
 
@@ -342,37 +357,39 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
         break
       }
 
-      // Publish event to handlers
-      if (Array.isArray(subscriptions[MessageType.ENGINE])) {
-        for (let handler of subscriptions[MessageType.ENGINE]) {
-          handler(engine)
-        }
-      }
-      // @ts-ignore
-      PubSubService.emit(MessageType.ENGINE, engine as Event)
+      PubSubService.emit(MessageType.ENGINE, new IncomingMessageEvent(engine))
       break
+
     case MessageType.CONTROL:
       const control = Control.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       // console.log(control)
+      PubSubService.emit(MessageType.CONTROL, new IncomingMessageEvent(control))
       break
+
     case MessageType.MOTION:
       const motion = Motion.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       // console.log(motion)
+      PubSubService.emit(MessageType.MOTION, new IncomingMessageEvent(motion))
       break
+
     case MessageType.INSTANCE:
       const instance = Instance.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       // console.log(instance)
       // TODO: Verify instance id
       // TODO: Verify version
+      PubSubService.emit(MessageType.INSTANCE, new IncomingMessageEvent(instance))
       break
+
     case MessageType.ROTATOR:
       // TODO: Implement... 3d vector - ignore every 50ms hide message
       // console.log("WebRTC - received rotator message")
       break
+
     case MessageType.ACTOR:
       // TODO: Implement... - 3d presentation
       // console.log("WebRTC - received actor message")
       break
+
     default:
       console.log('WebRTC - received unknown message')
   }

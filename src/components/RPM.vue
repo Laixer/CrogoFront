@@ -6,12 +6,20 @@ import { Engine } from '@/services/WebRTC/commands/engine'
 
 import StartButton from '@/components/StartButton.vue'
 import RPMControls from '@/components/RPMControls.vue'
+import type { IncomingMessageEvent } from '@/services/WebRTC/index.js'
 
 const RPM: Ref<number> = ref(0)
 
-Cargo.subscribe(MessageType.ENGINE, (event: Engine) => {
-  RPM.value = event.rpm
-})
+Cargo.PubSubService.subscribe(
+  MessageType.ENGINE,
+  (event: IncomingMessageEvent) => {
+    // TODO: create EngineMessageEvent
+    const message = event.message as Engine
+
+    RPM.value = message.rpm
+  },
+  'incoming'
+)
 </script>
 
 <template>

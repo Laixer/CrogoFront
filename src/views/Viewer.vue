@@ -65,9 +65,9 @@ onBeforeUnmount(() => {
   <div class="videoContainer">
     <video id="remoteVideo" playsinline autoplay muted></video>
 
-    <div class="overlay flex-center top bottom left right">
+    <div class="overlay flex-center flex column top bottom left right">
       <ConnectionWarning />
-      <StopMotionWarning />
+      <StopMotionWarning class="mt-1" />
     </div>
 
     <template v-if="enableOverlay">

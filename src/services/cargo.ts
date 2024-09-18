@@ -49,8 +49,8 @@ export const connect = async function connect(uuid: string) {
   // Connect the GamePad controller
   connectGamePadController()
 
-  subscribe('connectionStateChange', _registerDisconnect)
-  subscribe('channelStateChange', _registerDisconnect)
+  PubSubService.subscribe('connectionStateChange', _registerDisconnect, 'connection')
+  PubSubService.subscribe('channelStateChange', _registerDisconnect, 'connection')
 }
 
 const _registerDisconnect = (state: string) => {

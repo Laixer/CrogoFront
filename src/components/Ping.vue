@@ -5,6 +5,11 @@ import { MessageType } from '@/services/WebRTC/commands/index'
 import { Echo } from '@/services/WebRTC/commands/echo'
 
 import SignalBars from './SignalBars.vue'
+import type {
+  ChannelStateEvent,
+  ConnectionStateEvent,
+  IncomingMessageEvent
+} from '@/services/WebRTC/index.js'
 
 const echoMS: Ref<number> = ref(0)
 
@@ -17,26 +22,41 @@ const signalStrength: ComputedRef<number> = computed(() => {
   return tresholds.filter((treshold) => treshold > echoMS.value).length
 })
 
-Cargo.subscribe(MessageType.ECHO, (event: Echo) => {
-  echoMS.value = Date.now() - Number(event.payload)
-})
+Cargo.PubSubService.subscribe(
+  MessageType.ECHO,
+  (event: IncomingMessageEvent) => {
+    // TODO: create EchoMessageEvent
+    const message = event.message as Echo
+
+    echoMS.value = Date.now() - Number(message.payload)
+  },
+  'incoming'
+)
 
 /**
  * Clear the latency value upon diconnect
  */
-Cargo.subscribe('connectionStateChange', (state: RTCPeerConnectionState) => {
-  if (['closed', 'disconnected', 'failed'].includes(state)) {
-    echoMS.value = 0
-    stopPing()
-  }
-})
+Cargo.PubSubService.subscribe(
+  'connectionStateChange',
+  (event: ConnectionStateEvent) => {
+    if (event.state && ['closed', 'disconnected', 'failed'].includes(event.state)) {
+      echoMS.value = 0
+      stopPing()
+    }
+  },
+  'connection'
+)
 
-Cargo.subscribe('channelStateChange', (state: string) => {
-  if (['closed', 'closing'].includes(state)) {
-    echoMS.value = 0
-    stopPing()
-  }
-})
+Cargo.PubSubService.subscribe(
+  'channelStateChange',
+  (event: ChannelStateEvent) => {
+    if (event.state && ['closed', 'closing'].includes(event.state)) {
+      echoMS.value = 0
+      stopPing()
+    }
+  },
+  'connection'
+)
 
 const startPing = function startPing() {
   intervalReferenceId = setInterval(() => {
