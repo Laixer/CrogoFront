@@ -311,6 +311,7 @@ export class PubSub {
   subscribeToGroup(group: string, handler: Function): Function {
     this.groupSubscriptions[group] = this.groupSubscriptions[group] || []
 
+    // TODO: Support Async functions
     if ({}.toString.call(handler) !== '[object Function]') {
       this.emit('log', new PubSubEvent(`Group - ${group} - failed to add a subscription`))
       throw new Error(`Handler has to be a Function - ${group}`)
