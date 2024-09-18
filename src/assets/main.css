@@ -1,7 +1,8 @@
 @import './base.css';
 @import './mp-util-classes.css';
 
-html, body {
+html,
+body {
   background: #494242;
 }
 

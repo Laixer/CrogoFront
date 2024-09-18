@@ -1,4 +1,4 @@
-import { MessageType, type IMessage } from "."
+import { MessageType, type IMessage } from '.'
 
 /******************************************************************************
  * Engine

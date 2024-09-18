@@ -7,13 +7,13 @@
 .ma-q,
 .my-q,
 .mt-q {
-  margin-top: .25rem;
+  margin-top: 0.25rem;
 }
 
 .ma-h,
 .my-h,
 .mt-h {
-  margin-top: .5rem;
+  margin-top: 0.5rem;
 }
 
 .ma-1,
@@ -43,13 +43,13 @@
 .ma-q,
 .my-q,
 .mb-q {
-  margin-bottom: .25rem;
+  margin-bottom: 0.25rem;
 }
 
 .ma-h,
 .my-h,
 .mb-h {
-  margin-bottom: .5rem;
+  margin-bottom: 0.5rem;
 }
 
 .ma-1,
@@ -79,13 +79,13 @@
 .ma-q,
 .mx-q,
 .ml-q {
-  margin-left: .25rem;
+  margin-left: 0.25rem;
 }
 
 .ma-h,
 .mx-h,
 .ml-h {
-  margin-left: .5rem;
+  margin-left: 0.5rem;
 }
 
 .ma-1,
@@ -115,13 +115,13 @@
 .ma-q,
 .mx-q,
 .mr-q {
-  margin-right: .25rem;
+  margin-right: 0.25rem;
 }
 
 .ma-h,
 .mx-h,
 .mr-h {
-  margin-right: .5rem;
+  margin-right: 0.5rem;
 }
 
 .ma-1,
@@ -142,7 +142,7 @@
   margin-bottom: 3rem;
 }
 
-  .pa-0,
+.pa-0,
 .py-0,
 .pt-0 {
   padding-top: 0;
@@ -151,13 +151,13 @@
 .pa-q,
 .py-q,
 .pt-q {
-  padding-top: .25rem;
+  padding-top: 0.25rem;
 }
 
 .pa-h,
 .py-h,
 .pt-h {
-  padding-top: .5rem;
+  padding-top: 0.5rem;
 }
 
 .pa-1,
@@ -187,13 +187,13 @@
 .pa-q,
 .py-q,
 .pb-q {
-  padding-bottom: .25rem;
+  padding-bottom: 0.25rem;
 }
 
 .pa-h,
 .py-h,
 .pb-h {
-  padding-bottom: .5rem;
+  padding-bottom: 0.5rem;
 }
 
 .pa-1,
@@ -223,13 +223,13 @@
 .pa-q,
 .px-q,
 .pl-q {
-  padding-left: .25rem;
+  padding-left: 0.25rem;
 }
 
 .pa-h,
 .px-h,
 .pl-h {
-  padding-left: .5rem;
+  padding-left: 0.5rem;
 }
 
 .pa-1,
@@ -259,13 +259,13 @@
 .pa-q,
 .px-q,
 .pr-q {
-  padding-right: .25rem;
+  padding-right: 0.25rem;
 }
 
 .pa-h,
 .px-h,
 .pr-h {
-  padding-right: .5rem;
+  padding-right: 0.5rem;
 }
 
 .pa-1,

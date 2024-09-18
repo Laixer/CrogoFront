@@ -1,11 +1,8 @@
-import { watch, type ShallowRef, shallowRef } from "vue";
-import type { IWebSocketCommand } from "./commands";
-import type WebSocketConnection from "./WebSocketConnection";
+import { watch, type ShallowRef, shallowRef } from 'vue'
+import type { IWebSocketCommand } from './commands'
+import type WebSocketConnection from './WebSocketConnection'
 
-
-class WebSocketQueue { 
-  
-
+class WebSocketQueue {
   connection: WebSocketConnection
 
   /**
@@ -14,26 +11,21 @@ class WebSocketQueue {
    */
   queue: ShallowRef<IWebSocketCommand[]> = shallowRef([])
 
-
   constructor(connection: WebSocketConnection) {
     this.connection = connection
 
-    watch(
-      this.queue,
-      this.queueWatcher
-    )
+    watch(this.queue, this.queueWatcher)
   }
 
   queueMessage(command: IWebSocketCommand) {
     this.queue.value.push(command)
   }
 
-
   queueWatcher(queue: ShallowRef<IWebSocketCommand[]>) {
     // Send new commands
     queue.value
       .filter((command: IWebSocketCommand) => command.status === 'new')
-      .forEach(command => {
+      .forEach((command) => {
         try {
           command.status = 'sending'
 
@@ -41,23 +33,21 @@ class WebSocketQueue {
             id: command.id,
             jsonrpc: command.jsonrpc,
             method: command.method,
-            params: command.params,
+            params: command.params
           })
 
-          if (! success) {
+          if (!success) {
             console.error('WebSocketQueue - command failed', command)
             throw new Error('WebSocketQueue - Failed')
           }
 
           command.status = 'sent'
-        } catch(err) {
-
-          command.retry++ 
+        } catch (err) {
+          command.retry++
           command.status = 'failed'
         }
       })
   }
 }
-
 
 export default WebSocketQueue

@@ -1,5 +1,4 @@
-
-import {radial, raw} from 'gamepad-api-mappings';
+import { radial, raw } from 'gamepad-api-mappings'
 
 export enum Axis {
   'LEFTX' = 0,
@@ -44,15 +43,20 @@ export class ButtonEvent extends ControllerEvent {
   }
 }
 
-class GamePadState {
+export class ConnectionEvent extends Event {
+  constructor() {
+    super('ConnectionEvent')
+  }
+}
 
+class GamePadState {
   gamepad: Gamepad
 
   /**
    * Track the last known state so we can emit changes to the state
    */
   lastKnownState: {
-    buttons: Record<number, boolean>,
+    buttons: Record<number, boolean>
     axes: Record<number, number>
   } = {
     buttons: {},
@@ -63,26 +67,24 @@ class GamePadState {
     this.gamepad = gamepad
 
     for (let btn in Object.keys(Button)) {
-      console.log("btn init state...", btn, false)
+      console.log('btn init state...', btn, false)
       this.lastKnownState.buttons[btn] = false
     }
-    
+
     for (let axis in Object.keys(Axis)) {
-      console.log("axis init state...", axis, 0)
+      console.log('axis init state...', axis, 0)
       this.lastKnownState.axes[axis] = 0
     }
   }
 }
 
-
 export class XBOXControls {
-
   /**
-   * The axis deadzone 
+   * The axis deadzone
    *  See: https://medium.com/@_Gaeel_/input-is-hard-deadzones-73426e9608d3
    */
   deadzone = 0.2
-  
+
   /**
    * Whether the gamepad state is being monitored
    *  Switches on upon connecting a gamepad controler
@@ -99,17 +101,19 @@ export class XBOXControls {
   /**
    * The subscription handlers
    */
-  subscriptions: Record<'axis'|'btn', Function[]>  = {
+  subscriptions: Record<'axis' | 'btn' | 'connect' | 'disconnect', Function[]> = {
     btn: [],
-    axis: []
+    axis: [],
+    connect: [],
+    disconnect: []
   }
 
   /**
-   * Keep track of connected gamepads 
+   * Keep track of connected gamepads
    */
   constructor() {
-    window.addEventListener("gamepadconnected", this.registerGamepad.bind(this))
-    window.addEventListener("gamepaddisconnected", this.unregisterGamepad.bind(this))
+    window.addEventListener('gamepadconnected', this.registerGamepad.bind(this))
+    window.addEventListener('gamepaddisconnected', this.unregisterGamepad.bind(this))
   }
 
   /**
@@ -123,55 +127,57 @@ export class XBOXControls {
    * Register a game pad controller
    *  initiate with state
    */
-  registerGamepad(e: GamepadEvent) {    
+  registerGamepad(e: GamepadEvent) {
     if (this.connectedGamepads[e.gamepad.index]) {
-      throw new Error("Gamepad id already in use")
+      throw new Error('Gamepad id already in use')
     }
 
     this.connectedGamepads[e.gamepad.index] = new GamePadState(e.gamepad)
 
     // Start the loop, if it isn't currenly active
-    if (! this.isActive()) {
+    if (!this.isActive()) {
       this.checkGamePadStatesLoop.apply(this)
     }
+
+    this.emit('connect', new ConnectionEvent())
   }
 
   /**
    * Remove a gamepad from the list of registered gamepads
-   *  TODO: What happens if gamepad at index 0 is removed? 
+   *  TODO: What happens if gamepad at index 0 is removed?
    */
   unregisterGamepad(e: GamepadEvent) {
     if (this.connectedGamepads[e.gamepad.index]) {
       delete this.connectedGamepads[e.gamepad.index]
+      this.emit('disconnect', new ConnectionEvent())
     }
   }
 
   /**
    * This loop iterates in step with the animation frame rate.
    * Typically this is the monitor refresh rate (e.g. 16.67ms @ 60hz).
-   * 
+   *
    * Do note that the animation frame rate may be reduced of stopped entirely.
    * This happens when the browser tab is moved to the background.
-   * 
-   * There are pros and cons to this. It locks down interaction, which can be a 
-   * hinderance, but it can also prevent unintended movements. 
+   *
+   * There are pros and cons to this. It locks down interaction, which can be a
+   * hinderance, but it can also prevent unintended movements.
    */
   checkGamePadStatesLoop() {
-
     const gamepads = navigator
       .getGamepads()
       // Chrome always returns 4 "gamepads", proving null values if there aren't actually 4 gamepads
-      .filter(gamepad => !! gamepad);
+      .filter((gamepad) => !!gamepad)
 
     // We keep actively watching as long as the navigator returns gamepads
     this.active = gamepads.length !== 0
 
-    if (! this.active) {
-      return 
+    if (!this.active) {
+      return
     }
 
     // Go through every connected gamepad. Generally just 1...
-    for(let gamepad of gamepads) {
+    for (let gamepad of gamepads) {
       if (gamepad) {
         this.checkGamePadState(gamepad)
       }
@@ -188,7 +194,10 @@ export class XBOXControls {
    * Check the button and axis states of the gamepad
    */
   checkGamePadState(gamepad: Gamepad) {
-    this.checkButtonState(gamepad.buttons, this.connectedGamepads[gamepad.index].lastKnownState.buttons)
+    this.checkButtonState(
+      gamepad.buttons,
+      this.connectedGamepads[gamepad.index].lastKnownState.buttons
+    )
     this.checkAxisState(gamepad.axes, this.connectedGamepads[gamepad.index].lastKnownState.axes)
   }
 
@@ -201,29 +210,27 @@ export class XBOXControls {
         buttonState[btn] = buttons[btn]?.pressed
 
         // YaY for TS
-        console.log("btn", btn, buttonState[btn])
+        console.log('btn', btn, buttonState[btn])
         this.emit('btn', new ButtonEvent(Number(btn), buttonState[btn]))
       }
     }
   }
-  
+
   /**
    * Detect change in axis. Uses 'gamepad-api-mappings' to avoid deadzone
    */
   checkAxisState(axes: ReadonlyArray<number>, axisState: Record<string, number>) {
-    for(
-      let set of [
-        { x: Axis.LEFTX, y: Axis.LEFTY },
-        { x: Axis.RIGHTX, y: Axis.RIGHTY }
-      ]
-    ) {
-      const coord = {x: axes[set.x], y: axes[set.y]};
-      let force = radial(coord, 0.2, raw);
+    for (let set of [
+      { x: Axis.LEFTX, y: Axis.LEFTY },
+      { x: Axis.RIGHTX, y: Axis.RIGHTY }
+    ]) {
+      const coord = { x: axes[set.x], y: axes[set.y] }
+      let force = radial(coord, 0.2, raw)
 
       if (axisState[set.x] !== force.x) {
         axisState[set.x] = force.x
         this.emit('axis', new AxisEvent(Number(set.x), axisState[set.x]))
-      } 
+      }
 
       if (axisState[set.y] !== force.y) {
         axisState[set.y] = force.y
@@ -235,7 +242,7 @@ export class XBOXControls {
   /**
    * Add a subscription to one of the channels
    */
-  subscribe(channel: 'btn'|'axis', handler: Function ) {
+  subscribe(channel: 'btn' | 'axis' | 'connect' | 'disconnect', handler: Function) {
     this.subscriptions[channel].push(handler)
     return () => this.unssubscribe(channel, handler)
   }
@@ -243,17 +250,19 @@ export class XBOXControls {
   /**
    * Remove a subscription from one of the channels
    */
-  unssubscribe(channel: 'btn'|'axis', handler: Function ) {
+  unssubscribe(channel: 'btn' | 'axis' | 'connect' | 'disconnect', handler: Function) {
     this.subscriptions[channel] = this.subscriptions[channel].filter((sub) => sub !== handler)
   }
 
   /**
    * Emit an event to all handlers over a channel
    */
-  emit(channel: 'btn'|'axis', event: ButtonEvent|AxisEvent) {
+  emit(
+    channel: 'btn' | 'axis' | 'connect' | 'disconnect',
+    event: ButtonEvent | AxisEvent | ConnectionEvent
+  ) {
     for (let handler of this.subscriptions[channel]) {
       handler(event)
     }
   }
 }
-

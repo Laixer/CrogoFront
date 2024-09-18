@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount } from 'vue';
-import Cargo from '@/services/cargo.js';
+import { onMounted, onBeforeUnmount } from 'vue'
+import Cargo from '@/services/cargo.js'
 
 import Ping from '@/components/Ping.vue'
 import RPM from '@/components/RPM.vue'
@@ -12,7 +12,7 @@ import ConnectionWarning from '@/components/ConnectionWarning.vue'
 
 const urlParams = new URLSearchParams(window.location.search)
 const instanceId = urlParams.get('id')
-console.log("Viewer - instance_id from url", instanceId)
+console.log('Viewer - instance_id from url', instanceId)
 
 const enableOverlay = false
 
@@ -26,26 +26,24 @@ const enableOverlay = false
 // const instanceId = "38df5a6a-0b90-45f6-89eb-b831a3db555d"
 
 setTimeout(() => {
-  console.log("timeout")
+  console.log('timeout')
 
   // Cargo.reboot()
   // Cargo.echo()
   // Cargo.engineRequestRPM(800)
   // Cargo.disconnect()
-
 }, 2000)
 
 try {
   if (instanceId) {
     await Cargo.connect(instanceId)
   } else {
-    throw new Error("Missing instanceId")
+    throw new Error('Missing instanceId')
   }
 } catch (err) {
-  console.log("ERR0R")
+  console.log('ERR0R')
   console.log(err)
 }
-
 
 onMounted(() => {
   const video = document.getElementById('remoteVideo')
@@ -55,12 +53,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   try {
     Cargo.disconnect()
-  } catch(e) {
-    console.log("Unable to disconnect")
+  } catch (e) {
+    console.log('Unable to disconnect')
   }
 })
-
-
 </script>
 
 <template>
@@ -71,16 +67,14 @@ onBeforeUnmount(() => {
       <ConnectionWarning />
       <StopMotionWarning />
     </div>
-    
+
     <template v-if="enableOverlay">
       <div class="overlay top right flex column justify-end align-end mt-1 mr-1">
         <div class="flex inline">
           <Ping class="mr-1" />
           <RPM />
         </div>
-        <div 
-          class="flex column justify-end align-end mt-1" 
-          style="color: black">
+        <div class="flex column justify-end align-end mt-1" style="color: black">
           <StopMotionButton />
           <DisconnectButton class="mt-1" />
         </div>
@@ -137,7 +131,7 @@ onBeforeUnmount(() => {
   bottom: 0;
 }
 .left {
-  left: 0
+  left: 0;
 }
 .right {
   right: 0;
@@ -160,10 +154,10 @@ onBeforeUnmount(() => {
   flex-direction: column;
 }
 .flex.justify-end {
-  justify-content: flex-end
+  justify-content: flex-end;
 }
 .flex.align-end {
-  align-items: flex-end
+  align-items: flex-end;
 }
 .flex-grow {
   flex-grow: 1;
@@ -174,5 +168,4 @@ onBeforeUnmount(() => {
   justify-content: center;
   align-items: center;
 }
-
 </style>

@@ -1,4 +1,4 @@
-import { MessageType, type IMessage } from "."
+import { MessageType, type IMessage } from '.'
 
 /******************************************************************************
  * Controls
@@ -9,12 +9,12 @@ export enum ControlType {
   HYDRAULIC_BOOST = 0x7,
   HYDRAULIC_BOOM_CONFLUX = 0x8,
   HYDRAULIC_ARM_CONFLUX = 0x9,
-  HYDRAULIC_BOOM_FLOAT = 0xA,
-  MACHINE_SHUTDOWN = 0x1B,
-  MACHINE_ILLUMINATION = 0x1C,
-  MACHINE_LIGHTS = 0x2D,
-  MACHINE_HORN = 0x1E,
-  MACHINE_STROBE_LIGHT = 0x1F,
+  HYDRAULIC_BOOM_FLOAT = 0xa,
+  MACHINE_SHUTDOWN = 0x1b,
+  MACHINE_ILLUMINATION = 0x1c,
+  MACHINE_LIGHTS = 0x2d,
+  MACHINE_HORN = 0x1e,
+  MACHINE_STROBE_LIGHT = 0x1f,
   MACHINE_TRAVEL_ALARM = 0x20
 }
 

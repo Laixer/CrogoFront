@@ -1,4 +1,3 @@
-
 export enum DebuggerLevels {
   DEBUG = 0,
   LOG = 1,
@@ -8,18 +7,16 @@ export enum DebuggerLevels {
 }
 
 class DebuggerClass {
-
   enabled: boolean
 
   level: DebuggerLevels
-  
-  constructor(enabled: boolean, level?: DebuggerLevels) {
 
+  constructor(enabled: boolean, level?: DebuggerLevels) {
     this.enabled = enabled
 
     this.level = level || DebuggerLevels.LOG
   }
-  
+
   get debug() {
     if (this.level > DebuggerLevels.DEBUG) {
       return () => {}

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue'
 import Cargo from '@/services/cargo.js'
 
 import Button from './Button.vue'
 
 const props = defineProps({
-  RPM: { type: Number },
+  RPM: { type: Number }
 })
 
 const isStarting = ref(false)
@@ -17,8 +17,8 @@ const disabled = computed(() => {
 })
 
 watch(
-  () => isStarting.value, 
-  (starting) => starting && setTimeout(() => isStarting.value = false, 1500)
+  () => isStarting.value,
+  (starting) => starting && setTimeout(() => (isStarting.value = false), 1500)
 )
 
 const handleClick = function handleClick() {
@@ -32,12 +32,7 @@ const handleClick = function handleClick() {
 </script>
 
 <template>
-  <Button 
-    v-if="! isRunning"
-    class="StartButton"
-    small
-    :disabled="!! disabled"
-    @click="handleClick">
+  <Button v-if="!isRunning" class="StartButton" small :disabled="!!disabled" @click="handleClick">
     start
   </Button>
 </template>
@@ -48,4 +43,3 @@ const handleClick = function handleClick() {
   line-height: 1.25;
 }
 </style>
-

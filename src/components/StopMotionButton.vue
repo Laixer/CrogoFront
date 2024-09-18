@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import Cargo from '@/services/cargo.js'
 import Button from './Button.vue'
 
@@ -9,13 +8,7 @@ const handleStopMotion = function handleStopMotion() {
 </script>
 
 <template>
-  <Button
-    class="StopMotion"
-    small
-    secondary
-    @click="handleStopMotion">
-    stop motion
-  </Button>
+  <Button class="StopMotion" small secondary @click="handleStopMotion"> stop motion </Button>
 </template>
 
 <style>

@@ -4,17 +4,13 @@
  *  TODO: auto retry & reconnect if possible ?
  */
 
-import type { WebSocketCommand } from "./commands";
-
+import type { WebSocketCommand } from './commands'
 
 // TODO: Turn this into an .env var
 // const ws_host = 'ws://localhost:8000';
-const ws_host = 'wss://edge.laixer.equipment/api';
-
-
+const ws_host = 'wss://edge.laixer.equipment/api'
 
 class WebSocketConnection {
-
   /**
    * Uuid of the connected machine
    */
@@ -25,13 +21,11 @@ class WebSocketConnection {
    */
   connection: WebSocket | undefined
 
-
-  // TODO: Queue class 
+  // TODO: Queue class
   queue: [] = []
 
-
   /**
-   * 
+   *
    */
   constructor(instanceId: string) {
     // TODO: Check if string is valid uuid
@@ -45,18 +39,16 @@ class WebSocketConnection {
     return new Promise<WebSocketConnection>((resolve, reject) => {
       const self = this
       if (this.connection) {
-        console.error("WebSocket - connection already established", this.instanceId)
+        console.error('WebSocket - connection already established', this.instanceId)
         reject(new Error(`Only one WebSocket connection allowed - ${this.instanceId}`))
       }
-
 
       this.connection = new WebSocket(`${ws_host}/app/${this.instanceId}/ws`)
 
       this.connection.onclose = this.onClose
       this.connection.onerror = this.onError
       this.connection.onmessage = this.handleResponseMessage
-      this.connection.onopen = function() {
-        
+      this.connection.onopen = function () {
         resolve(self)
       }
     })
@@ -68,11 +60,9 @@ class WebSocketConnection {
   }
 
   /**
-   * 
+   *
    */
-  queueMessage(message: WebSocketCommand) {
-    
-  }
+  queueMessage(message: WebSocketCommand) {}
 
   /**
    * Send a custom message over the WebSocket connection
@@ -81,18 +71,15 @@ class WebSocketConnection {
    */
   _send(message: object) {
     try {
-      if (! this.connection) {
+      if (!this.connection) {
         throw new Error(`Websocket - no connection available - ${this.instanceId}`)
       }
 
-      this.connection.send(
-        JSON.stringify(message)
-      )
+      this.connection.send(JSON.stringify(message))
 
       return true
-
-    } catch(err) {
-      console.error("Websocket - send error", this.instanceId)
+    } catch (err) {
+      console.error('Websocket - send error', this.instanceId)
       console.error(err)
 
       return false
@@ -104,7 +91,7 @@ class WebSocketConnection {
    */
   onClose() {
     this.connection = undefined
-    console.log("WebSocket - connection has closed", this.instanceId)
+    console.log('WebSocket - connection has closed', this.instanceId)
   }
 
   /**
@@ -112,10 +99,9 @@ class WebSocketConnection {
    *  For example: some data could not be sent
    */
   onError(err: Event) {
-    console.error("Websocket - error event", this.instanceId)
+    console.error('Websocket - error event', this.instanceId)
     console.error(err)
   }
 }
-
 
 export default WebSocketConnection

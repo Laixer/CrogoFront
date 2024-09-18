@@ -1,6 +1,5 @@
 <script setup lang="ts">
-
-import Cargo from '@/services/cargo.js';
+import Cargo from '@/services/cargo.js'
 import Button from './Button.vue'
 
 const handleEmergencyStop = function handleEmergencyStop() {
@@ -9,7 +8,5 @@ const handleEmergencyStop = function handleEmergencyStop() {
 </script>
 
 <template>
-  <Button warning @click="handleEmergencyStop">
-    STOP
-  </Button>
+  <Button warning @click="handleEmergencyStop"> STOP </Button>
 </template>

@@ -1,5 +1,5 @@
-import { parse, stringify } from "uuid"
-import { MessageType, type IMessage } from "."
+import { parse, stringify } from 'uuid'
+import { MessageType, type IMessage } from '.'
 
 // TODO: Maybe move up
 export enum MachineType {
@@ -20,7 +20,13 @@ export class Instance implements IMessage {
   version: [number, number, number]
   serial_number: string
 
-  constructor(id: string, model: string, machine_type: MachineType, version: [number, number, number], serial_number: string) {
+  constructor(
+    id: string,
+    model: string,
+    machine_type: MachineType,
+    version: [number, number, number],
+    serial_number: string
+  ) {
     this.id = id
     this.model = model
     this.machine_type = machine_type
@@ -37,13 +43,19 @@ export class Instance implements IMessage {
 
     const id = stringify(new Uint8Array(data, 0, 16))
     const machine_type = dataView.getUint8(16) as MachineType
-    const version = [dataView.getUint8(17), dataView.getUint8(18), dataView.getUint8(19)] as [number, number, number]
+    const version = [dataView.getUint8(17), dataView.getUint8(18), dataView.getUint8(19)] as [
+      number,
+      number,
+      number
+    ]
 
     const modelLength = dataView.getUint16(20, false)
     const model = new TextDecoder().decode(new Uint8Array(data, 22, modelLength))
 
     const serialNumberLength = dataView.getUint16(22 + modelLength, false)
-    const serialNumber = new TextDecoder().decode(new Uint8Array(data, 24 + modelLength, serialNumberLength))
+    const serialNumber = new TextDecoder().decode(
+      new Uint8Array(data, 24 + modelLength, serialNumberLength)
+    )
 
     return new Instance(id, model, machine_type, version, serialNumber)
   }

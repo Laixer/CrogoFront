@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, type Ref } from 'vue';
-import Cargo from '@/services/cargo.js';
-import { MessageType } from "@/services/WebRTC/commands/index"
-import { Engine } from "@/services/WebRTC/commands/engine"
+import { ref, type Ref } from 'vue'
+import Cargo from '@/services/cargo.js'
+import { MessageType } from '@/services/WebRTC/commands/index'
+import { Engine } from '@/services/WebRTC/commands/engine'
 
 import StartButton from '@/components/StartButton.vue'
 import RPMControls from '@/components/RPMControls.vue'

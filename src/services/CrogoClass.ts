@@ -1,10 +1,7 @@
-import { initiateRTCConnection } from "./WebRTC"
-import { establishWebSocketConnection } from "./websocket"
-
-
+import { initiateRTCConnection } from './WebRTC'
+import { establishWebSocketConnection } from './websocket'
 
 class Crogo {
-
   /**
    * Uuid of the connected machine
    */
@@ -17,12 +14,12 @@ class Crogo {
   connectionState: 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | null = null
 
   /**
-   * 
+   *
    */
   WebSocketConnection: WebSocket | null = null
 
   /**
-   * 
+   *
    */
   WebRCTConnection: RTCPeerConnection | null = null
 
@@ -47,7 +44,7 @@ class Crogo {
     // TODO: this.WebSocketConnection = New WebSocketConnection(this.instanceId)
     // TODO: await this.WebSocketConnection.connect()
 
-    // init connection 
+    // init connection
     await establishWebSocketConnection({
       instanceId: this.instanceId
     })
@@ -55,18 +52,18 @@ class Crogo {
         this.WebSocketConnection = WebSocketConnection
       })
       .catch((err: Error) => {
-        console.log("Cargo - failed to connect websocket")
+        console.log('Cargo - failed to connect websocket')
         throw err
       })
 
-    console.log("Cargo - websocket connected")
-  
+    console.log('Cargo - websocket connected')
+
     await initiateRTCConnection()
       .then((WebRCTConnection) => {
         this.WebRCTConnection = WebRCTConnection
       })
       .catch((err: Error) => {
-        console.log("Cargo - failed to connect WebRTC")
+        console.log('Cargo - failed to connect WebRTC')
         throw err
       })
 
@@ -90,8 +87,6 @@ class Crogo {
 
     this.connectionState = 'DISCONNECTED'
   }
-
 }
-
 
 export default Crogo

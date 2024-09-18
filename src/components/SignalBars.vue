@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, type ComputedRef } from 'vue';
+import { computed, type ComputedRef } from 'vue'
 
 const props = defineProps({
-  bars: { type: Number, required: true },
+  bars: { type: Number, required: true }
 })
 
-const signalStrength: ComputedRef<'good'|'bad'|'ok'|'none'> = computed(() => {
+const signalStrength: ComputedRef<'good' | 'bad' | 'ok' | 'none'> = computed(() => {
   if (props.bars === 5 || props.bars === 4) {
     return 'good'
   }
@@ -18,8 +18,10 @@ const signalStrength: ComputedRef<'good'|'bad'|'ok'|'none'> = computed(() => {
   return 'none'
 })
 
-const barsClass: ComputedRef<'five-bars'|'four-bars'|'three-bars'|'two-bars'|'one-bar'|'no-bars'> = computed(() => {
-  switch(props.bars) {
+const barsClass: ComputedRef<
+  'five-bars' | 'four-bars' | 'three-bars' | 'two-bars' | 'one-bar' | 'no-bars'
+> = computed(() => {
+  switch (props.bars) {
     case 5:
       return 'five-bars'
     case 4:
@@ -33,14 +35,9 @@ const barsClass: ComputedRef<'five-bars'|'four-bars'|'three-bars'|'two-bars'|'on
   }
   return 'no-bars'
 })
-
-
 </script>
 <template>
-  <div 
-    class="signal-bars" 
-    :class="`${signalStrength} ${barsClass}`"
-    >
+  <div class="signal-bars" :class="`${signalStrength} ${barsClass}`">
     <div class="first-bar bar"></div>
     <div class="second-bar bar"></div>
     <div class="third-bar bar"></div>
@@ -63,11 +60,21 @@ const barsClass: ComputedRef<'five-bars'|'four-bars'|'three-bars'|'two-bars'|'on
   display: inline-block;
 }
 
-.signal-bars .bar.first-bar  { height: 20%; }
-.signal-bars .bar.second-bar { height: 40%; }
-.signal-bars .bar.third-bar  { height: 60%; }
-.signal-bars .bar.fourth-bar { height: 80%; }
-.signal-bars .bar.fifth-bar  { height: 99%; }
+.signal-bars .bar.first-bar {
+  height: 20%;
+}
+.signal-bars .bar.second-bar {
+  height: 40%;
+}
+.signal-bars .bar.third-bar {
+  height: 60%;
+}
+.signal-bars .bar.fourth-bar {
+  height: 80%;
+}
+.signal-bars .bar.fifth-bar {
+  height: 99%;
+}
 
 .good .bar {
   background-color: #16a085;
@@ -87,7 +94,7 @@ const barsClass: ComputedRef<'five-bars'|'four-bars'|'three-bars'|'two-bars'|'on
 .three-bars .bar.fifth-bar,
 .three-bars .bar.fourth-bar,
 .one-bar .bar:not(.first-bar),
-.two-bars .bar:not(.first-bar):not(.second-bar) {       
+.two-bars .bar:not(.first-bar):not(.second-bar) {
   background-color: #fafafa;
   border: thin solid #f3f3f3;
 }

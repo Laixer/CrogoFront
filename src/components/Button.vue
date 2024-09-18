@@ -9,13 +9,13 @@ defineProps({
 </script>
 
 <template>
-  <div class="button" :class="{ primary, secondary, warning, small, disabled }"> 
+  <div class="button" :class="{ primary, secondary, warning, small, disabled }">
     <slot />
   </div>
 </template>
 <style>
 .button {
-  background-color: #04AA6D;
+  background-color: #04aa6d;
   border: none;
   border-radius: 0.4rem;
   color: white;
@@ -29,13 +29,13 @@ defineProps({
   user-select: none;
 }
 .button.small {
-  padding: 0.2rem 0.5rem
+  padding: 0.2rem 0.5rem;
 }
 .button:hover {
   background-color: #038857;
 }
 .button.primary {
-  background-color: #04AA6D;
+  background-color: #04aa6d;
 }
 .button.primary:hover {
   background-color: #038857;
@@ -47,12 +47,13 @@ defineProps({
   background-color: #cf8232;
 }
 .button.warning {
-  background-color: #CC3300;
+  background-color: #cc3300;
 }
 .button.warning:hover {
   background-color: #992600;
 }
-.button.disabled, .button.disabled:hover {
+.button.disabled,
+.button.disabled:hover {
   cursor: not-allowed;
   background-color: gray;
 }

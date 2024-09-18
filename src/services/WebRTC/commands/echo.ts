@@ -1,4 +1,4 @@
-import { MessageType, type IMessage } from "."
+import { MessageType, type IMessage } from '.'
 
 /******************************************************************************
  * Echo
@@ -25,7 +25,7 @@ export class Echo implements IMessage {
     const dataView = new DataView(buffer)
 
     dataView.setBigInt64(0, this.payload)
-    
+
     return buffer
   }
 }

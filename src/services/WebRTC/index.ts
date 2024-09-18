@@ -1,23 +1,21 @@
-
-import { disconnect } from "../cargo";
+import { disconnect } from '../cargo'
+import { PubSubService } from '../PubSubService'
 // import Debugger from "../Debugger";
-import { sendCommand as sendWebsocketCommand } from "../websocket";
-import { RTCCandidateCommand, RTCSetupCommand } from "../websocket/commands/setup";
+import { sendCommand as sendWebsocketCommand } from '../websocket'
+import { RTCCandidateCommand, RTCSetupCommand } from '../websocket/commands/setup'
 
 // FUTURE: WIP: TODO
-import { Frame, GLONAX_PROTOCOL_HEADER_SIZE, MessageType, type IMessage } from "./commands";
-import { Control } from "./commands/controls";
-import { Echo } from "./commands/echo";
-import { Engine } from "./commands/engine";
-import { Instance } from "./commands/instance";
-import { Motion } from "./commands/motion";
-import { ModuleStatus } from "./commands/status";
+import { Frame, GLONAX_PROTOCOL_HEADER_SIZE, MessageType, type IMessage } from './commands'
+import { Control } from './commands/controls'
+import { Echo } from './commands/echo'
+import { Engine } from './commands/engine'
+import { Instance } from './commands/instance'
+import { Motion } from './commands/motion'
+import { ModuleStatus } from './commands/status'
 
 const configuration: RTCConfiguration = {
-  bundlePolicy: "max-bundle",
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-  ],
+  bundlePolicy: 'max-bundle',
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
 }
 
 let WebRTCConnection: RTCPeerConnection | null = null
@@ -26,10 +24,9 @@ let SignalChannel: RTCDataChannel | null = null
 let VideoStream: MediaStream | null = null
 
 /**
- * 
+ *
  */
 const subscriptions: Record<string, Function[]> = {}
-
 
 export const getWebRTCConnection = function getWebRTCConnection(): RTCPeerConnection | null {
   return WebRTCConnection
@@ -47,10 +44,10 @@ export const isFailed = function isFailed(): boolean {
  * The connection state change handler, _after_ the connection has been established
  */
 export const onConnectionStateChange = function onConnectionStateChange(event: Event) {
-  console.log("onConnectionStateChange", WebRTCConnection?.connectionState, Date.now())
+  console.log('onConnectionStateChange', WebRTCConnection?.connectionState, Date.now())
 
   if (Array.isArray(subscriptions['connectionStateChange'])) {
-    for (let handler of subscriptions["connectionStateChange"]) {
+    for (let handler of subscriptions['connectionStateChange']) {
       // RTCPeerConnectionState: "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new"
       handler(WebRTCConnection?.connectionState, event)
     }
@@ -60,9 +57,9 @@ export const onConnectionStateChange = function onConnectionStateChange(event: E
 export const initiateRTCConnection = function initiateRTCConnection() {
   return new Promise<RTCPeerConnection>((resolve, reject) => {
     try {
-      WebRTCConnection = new RTCPeerConnection(configuration);
+      WebRTCConnection = new RTCPeerConnection(configuration)
 
-      // Note: Without specifying at least 1 transciever / data channel, 
+      // Note: Without specifying at least 1 transciever / data channel,
       //       trying to establish a connection will throw an error
 
       WebRTCConnection.addTransceiver('video', { direction: 'recvonly' })
@@ -70,30 +67,30 @@ export const initiateRTCConnection = function initiateRTCConnection() {
         if (event.streams.length) {
           VideoStream = event.streams[0]
         } else {
-          console.error("WebRTC video - missing stream data")
+          console.error('WebRTC video - missing stream data')
         }
-      } 
+      }
       // create the command channel
       // Command channel is for 2 way communication
-      CommandChannel = WebRTCConnection.createDataChannel("command")
+      CommandChannel = WebRTCConnection.createDataChannel('command')
       CommandChannel.onmessage = onReceiveMessage
       CommandChannel.onerror = (event) => {
-        console.log("CommandChannel error", event, Date.now())
+        console.log('CommandChannel error', event, Date.now())
       }
       CommandChannel.onclosing = (event) => {
-        console.log("CommandChannel closing", event, Date.now())
+        console.log('CommandChannel closing', event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let handler of subscriptions["channelStateChange"]) {
+          for (let handler of subscriptions['channelStateChange']) {
             handler('closing')
           }
         }
       }
       CommandChannel.onclose = (event) => {
-        console.log("CommandChannel close", event, Date.now())
+        console.log('CommandChannel close', event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let handler of subscriptions["channelStateChange"]) {
+          for (let handler of subscriptions['channelStateChange']) {
             handler('close')
           }
         }
@@ -101,28 +98,28 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
       // TODO: separate signal on receive message
       // Signal channel is only for receiving messages
-      SignalChannel = WebRTCConnection.createDataChannel("signal")
+      SignalChannel = WebRTCConnection.createDataChannel('signal')
       SignalChannel.onmessage = (event) => {
         // console.log("SignalChannel")
         onReceiveMessage(event)
       }
       SignalChannel.onerror = (event) => {
-        console.log("SignalChannel error", event, Date.now())
+        console.log('SignalChannel error', event, Date.now())
       }
       SignalChannel.onclosing = (event) => {
-        console.log("SignalChannel closing", event, Date.now())
+        console.log('SignalChannel closing', event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let handler of subscriptions["channelStateChange"]) {
+          for (let handler of subscriptions['channelStateChange']) {
             handler('closing')
           }
         }
       }
       SignalChannel.onclose = (event) => {
-        console.log("SignalChannel close", event, Date.now())
+        console.log('SignalChannel close', event, Date.now())
 
         if (Array.isArray(subscriptions['channelStateChange'])) {
-          for (let handler of subscriptions["channelStateChange"]) {
+          for (let handler of subscriptions['channelStateChange']) {
             handler('close')
           }
         }
@@ -130,41 +127,33 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
       // Resolve the promise when the connection is established
       WebRTCConnection.onconnectionstatechange = (event: Event) => {
-        console.log("WebRTC - connection state change", event, Date.now())
+        console.log('WebRTC - connection state change', event, Date.now())
 
         if (isConnected()) {
-          
           // Replace this event handler. We only want to resolve once
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = onConnectionStateChange)
-          
+
           if (Array.isArray(subscriptions['connectionStateChange'])) {
-            for (let handler of subscriptions["connectionStateChange"]) {
+            for (let handler of subscriptions['connectionStateChange']) {
               handler(WebRTCConnection?.connectionState, event)
             }
           }
 
-
-        // Log stats
-        if (WebRTCConnection) {
-          WebRTCConnection
-            .getReceivers()
-            .forEach(
-              (
-                receiver: RTCRtpReceiver,
-                index: number,
-                array: RTCRtpReceiver[]
-              ) => {
-                if (receiver.track.kind !== "video") {
+          // Log stats
+          if (WebRTCConnection) {
+            WebRTCConnection.getReceivers().forEach(
+              (receiver: RTCRtpReceiver, index: number, array: RTCRtpReceiver[]) => {
+                if (receiver.track.kind !== 'video') {
                   return
                 }
 
                 // Emit video connection state changes
                 if (receiver.transport) {
-                  receiver.transport.onstatechange = function(state) {  
-                    console.log("transport state", state, Date.now())
+                  receiver.transport.onstatechange = function (state) {
+                    console.log('transport state', state, Date.now())
 
                     if (Array.isArray(subscriptions['channelStateChange'])) {
-                      for (let handler of subscriptions["channelStateChange"]) {
+                      for (let handler of subscriptions['channelStateChange']) {
                         handler(state)
                       }
                     }
@@ -180,17 +169,16 @@ export const initiateRTCConnection = function initiateRTCConnection() {
                 //           console.log(
                 //             "The PC stats returned the framesPerSecond value " +
                 //             statValue["framesPerSecond"] +
-                //             " while the full inbound-rtp stats reflect as " +  
+                //             " while the full inbound-rtp stats reflect as " +
                 //             JSON.stringify(statValue, null, 4)
                 //           );
                 //         }
                 //       }
                 //     );
-                //   });                
+                //   });
                 // }, 2000)
-                
               }
-            );
+            )
           }
 
           resolve(WebRTCConnection as RTCPeerConnection)
@@ -198,55 +186,50 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
         if (isFailed()) {
           // TODO: Show message ?
-          // TODO: Auto retry ? After delay of x seconds ? 
-          console.error("WebRT - Failed connection", Date.now())
+          // TODO: Auto retry ? After delay of x seconds ?
+          console.error('WebRT - Failed connection', Date.now())
 
           // Remove this event handler. We only want to resolve once
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = null)
-          
+
           if (Array.isArray(subscriptions['connectionStateChange'])) {
-            for (let handler of subscriptions["connectionStateChange"]) {
+            for (let handler of subscriptions['connectionStateChange']) {
               handler(WebRTCConnection?.connectionState, event)
             }
           }
 
-          reject("connection failed")
+          reject('connection failed')
         }
       }
 
       // Establishing the connection
       WebRTCConnection.onicecandidate = onicecandidate
 
-    
-      console.log("WebRTC - Creating offer")
-      WebRTCConnection.createOffer()
-        .then(async (offer) => {
-          if (!WebRTCConnection) {
-            return // Because TS...
-          }
-          console.log("WebRTC - Created offer", offer)
-          await WebRTCConnection.setLocalDescription(offer)
-    
-          console.log("WebRTC - local description", WebRTCConnection?.localDescription)
-    
-          // Setup RTC through the websocket connection
-          sendWebsocketCommand(
-            new RTCSetupCommand(offer)
-          )
-        })
-    } catch(err) {
-      console.log("WebRTC - failure while connecting", err)
+      console.log('WebRTC - Creating offer')
+      WebRTCConnection.createOffer().then(async (offer) => {
+        if (!WebRTCConnection) {
+          return // Because TS...
+        }
+        console.log('WebRTC - Created offer', offer)
+        await WebRTCConnection.setLocalDescription(offer)
+
+        console.log('WebRTC - local description', WebRTCConnection?.localDescription)
+
+        // Setup RTC through the websocket connection
+        sendWebsocketCommand(new RTCSetupCommand(offer))
+      })
+    } catch (err) {
+      console.log('WebRTC - failure while connecting', err)
       reject(err)
     }
   })
 }
 
 export const send = function send(message: IMessage) {
-
   // console.log("sending message", message)
 
   if (!isConnected()) {
-    console.error("WebRTC - not connected") // TODO: Throw Exception
+    console.error('WebRTC - not connected') // TODO: Throw Exception
 
     return
   }
@@ -272,7 +255,7 @@ export const send = function send(message: IMessage) {
  *  TODO: Handle situations after initial stable connection has been established (e.g. moving to another wifi area)
  */
 const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent) {
-  console.log("WebRTC - ice candidate", event.candidate)
+  console.log('WebRTC - ice candidate', event.candidate)
 
   // signals that there are no more candidates to process
   if (event.candidate === null) {
@@ -280,13 +263,10 @@ const onicecandidate = function onicecandidate(event: RTCPeerConnectionIceEvent)
   }
 
   // Setup RTC through the websocket connection
-  sendWebsocketCommand(
-    new RTCCandidateCommand(event.candidate)
-  )
+  sendWebsocketCommand(new RTCCandidateCommand(event.candidate))
 }
 
-
-const lastReceivedMessagesByType: Record<MessageType, string|undefined> = {
+const lastReceivedMessagesByType: Record<MessageType, string | undefined> = {
   [MessageType.ERROR]: undefined,
   [MessageType.ECHO]: undefined,
   [MessageType.SESSION]: undefined,
@@ -308,7 +288,7 @@ const lastReceivedMessagesByType: Record<MessageType, string|undefined> = {
 /**
  * Whether the contents of the previous message of a particular type had the exact same contents
  */
-const ignoreReceivedMessages = (type: MessageType, message: IMessage ) => {
+const ignoreReceivedMessages = (type: MessageType, message: IMessage) => {
   const json = JSON.stringify(message)
 
   if (lastReceivedMessagesByType[type] && lastReceivedMessagesByType[type] === json) {
@@ -332,18 +312,17 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
   // Debugger.log("WebRTC - frame", frame)
 
   // Generic handlers
-  if (Array.isArray(subscriptions["*"])) {
-    for (let handler of subscriptions["*"]) {
+  if (Array.isArray(subscriptions['*'])) {
+    for (let handler of subscriptions['*']) {
       handler(event)
     }
   }
 
-  // 
+  //
   switch (frame.messageType) {
     case MessageType.ECHO:
-      
-      const echo = Echo.fromBytes(event.data.slice(10)) 
-      
+      const echo = Echo.fromBytes(event.data.slice(10))
+
       // Publish event to handlers
       if (Array.isArray(subscriptions[MessageType.ECHO])) {
         for (let handler of subscriptions[MessageType.ECHO]) {
@@ -360,7 +339,7 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
       const engine = Engine.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
 
       if (ignoreReceivedMessages(frame.messageType, engine)) {
-        break;
+        break
       }
 
       // Publish event to handlers
@@ -369,6 +348,8 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
           handler(engine)
         }
       }
+      // @ts-ignore
+      PubSubService.emit(MessageType.ENGINE, engine as Event)
       break
     case MessageType.CONTROL:
       const control = Control.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
@@ -382,7 +363,7 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
       const instance = Instance.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       // console.log(instance)
       // TODO: Verify instance id
-      // TODO: Verify version 
+      // TODO: Verify version
       break
     case MessageType.ROTATOR:
       // TODO: Implement... 3d vector - ignore every 50ms hide message
@@ -393,28 +374,29 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
       // console.log("WebRTC - received actor message")
       break
     default:
-      console.log("WebRTC - received unknown message")
+      console.log('WebRTC - received unknown message')
   }
 }
 
 /**
  * Used by the Websocket RTCSetupCommand to establish the RTC connection
  */
-export const setRemoteDescription = async function setRemoteDescription(description: RTCSessionDescription) {
+export const setRemoteDescription = async function setRemoteDescription(
+  description: RTCSessionDescription
+) {
   try {
-    console.log("WebRTC - setting remote description", description)
+    console.log('WebRTC - setting remote description', description)
 
     const WebRTC = getWebRTCConnection()
     if (WebRTC === null) {
-      console.error("WebRTC - Missing WebRTC instance while trying to set a remote description")
+      console.error('WebRTC - Missing WebRTC instance while trying to set a remote description')
 
-      throw new Error("WebRTC - Missing WebRTC instance while trying to set a remote description")
+      throw new Error('WebRTC - Missing WebRTC instance while trying to set a remote description')
     }
 
     await WebRTC.setRemoteDescription(description)
-    
-  } catch(err) {
-    console.log("WebRTC - failed to set remote connection", description)
+  } catch (err) {
+    console.log('WebRTC - failed to set remote connection', description)
 
     disconnect()
     throw err
@@ -426,11 +408,13 @@ export const setRemoteDescription = async function setRemoteDescription(descript
  * TODO: Refactor subscribe, etc to XBOXControls structure ?
  * TODO: Maybe create generic PubSub class ?
  */
-export const subscribe = function(channel: MessageType|"*"|"connectionStateChange"|"channelStateChange", handler: Function) {
+export const subscribe = function (
+  channel: MessageType | '*' | 'connectionStateChange' | 'channelStateChange',
+  handler: Function
+) {
   subscriptions[channel] = subscriptions[channel] || []
   subscriptions[channel].push(handler)
 }
-
 
 export const connectVideoElement = (video: HTMLVideoElement) => {
   if (VideoStream) {

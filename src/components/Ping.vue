@@ -1,27 +1,20 @@
 <script setup lang="ts">
-
-import { onBeforeMount, onBeforeUnmount, ref, computed, type Ref, type ComputedRef } from 'vue';
-import Cargo from '@/services/cargo.js';
-import { MessageType } from "@/services/WebRTC/commands/index"
-import { Echo } from "@/services/WebRTC/commands/echo"
+import { onBeforeMount, onBeforeUnmount, ref, computed, type Ref, type ComputedRef } from 'vue'
+import Cargo from '@/services/cargo.js'
+import { MessageType } from '@/services/WebRTC/commands/index'
+import { Echo } from '@/services/WebRTC/commands/echo'
 
 import SignalBars from './SignalBars.vue'
 
 const echoMS: Ref<number> = ref(0)
 
-const tresholds = [
-  75,
-  125,
-  175,
-  225,
-  275
-]
-let intervalReferenceId: ReturnType<typeof setInterval>|undefined = undefined
+const tresholds = [75, 125, 175, 225, 275]
+let intervalReferenceId: ReturnType<typeof setInterval> | undefined = undefined
 
 const signalStrength: ComputedRef<number> = computed(() => {
   if (echoMS.value === 0) return 0
 
-  return tresholds.filter(treshold => treshold > echoMS.value).length
+  return tresholds.filter((treshold) => treshold > echoMS.value).length
 })
 
 Cargo.subscribe(MessageType.ECHO, (event: Echo) => {
@@ -31,14 +24,14 @@ Cargo.subscribe(MessageType.ECHO, (event: Echo) => {
 /**
  * Clear the latency value upon diconnect
  */
-Cargo.subscribe("connectionStateChange", (state: RTCPeerConnectionState) => {
+Cargo.subscribe('connectionStateChange', (state: RTCPeerConnectionState) => {
   if (['closed', 'disconnected', 'failed'].includes(state)) {
     echoMS.value = 0
     stopPing()
   }
 })
 
-Cargo.subscribe("channelStateChange", (state: string) => {
+Cargo.subscribe('channelStateChange', (state: string) => {
   if (['closed', 'closing'].includes(state)) {
     echoMS.value = 0
     stopPing()
@@ -48,7 +41,7 @@ Cargo.subscribe("channelStateChange", (state: string) => {
 const startPing = function startPing() {
   intervalReferenceId = setInterval(() => {
     Cargo.echo()
-  }, 1000);
+  }, 1000)
 }
 const stopPing = function stopPing() {
   if (intervalReferenceId) {
@@ -62,24 +55,21 @@ onBeforeMount(() => {
   }
 })
 
-
 onBeforeUnmount(() => {
   stopPing()
 })
-
 </script>
 
 <template>
   <div class="Ping">
     <div class="Ping__figure">
-      {{ echoMS === 0 ? '-': echoMS }}
+      {{ echoMS === 0 ? '-' : echoMS }}
     </div>
     <SignalBars :bars="signalStrength" />
   </div>
 </template>
 
 <style>
-
 .Ping {
   position: relative;
   color: white;

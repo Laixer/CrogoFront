@@ -1,13 +1,13 @@
-import { MessageType, type IMessage } from "."
+import { MessageType, type IMessage } from '.'
 
 /******************************************************************************
  * Module status
  */
 export enum ModuleState {
-  Healthy = 0xF8,
-  Degraded = 0xF9,
-  Faulty = 0xFA,
-  Emergency = 0xFB,
+  Healthy = 0xf8,
+  Degraded = 0xf9,
+  Faulty = 0xfa,
+  Emergency = 0xfb
 }
 
 // TODO: Values can change in the future
@@ -16,7 +16,7 @@ export enum ModuleError {
   VersionMismatch = 1,
   CommunicationTimeout = 2,
   GenericCommunicationError = 3,
-  IOError = 4,
+  IOError = 4
 }
 
 export class ModuleStatus implements IMessage {

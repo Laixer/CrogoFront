@@ -1,23 +1,22 @@
 <script setup lang="ts">
 defineProps({
-  label: { type: String },
+  label: { type: String }
 })
 </script>
 
 <template>
-  <div class="Warning"> 
+  <div class="Warning">
     {{ label }}
   </div>
 </template>
 
-<style> 
+<style>
 .Warning {
-  border: #CC330080 3px solid;
+  border: #cc330080 3px solid;
   color: white;
   font-size: 2rem;
   font-weight: bold;
   padding: 1rem 4rem;
-  background-color: #CC330050;
+  background-color: #cc330050;
 }
-
 </style>

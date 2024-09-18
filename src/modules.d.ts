@@ -1,1 +1,1 @@
-declare module 'gamepad-api-mappings';
+declare module 'gamepad-api-mappings'

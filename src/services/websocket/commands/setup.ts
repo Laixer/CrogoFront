@@ -1,14 +1,13 @@
-import { setRemoteDescription } from "@/services/WebRTC"
-import { WebSocketCommand } from "."
+import { setRemoteDescription } from '@/services/WebRTC'
+import { WebSocketCommand } from '.'
 
 /**
  * Websocket command to start the setup of the RTC connection
  */
 export class RTCSetupCommand extends WebSocketCommand {
+  method = 'setup_rtc'
 
-  method = "setup_rtc"
-
-  constructor(offer: RTCSessionDescription|RTCSessionDescriptionInit) {
+  constructor(offer: RTCSessionDescription | RTCSessionDescriptionInit) {
     super()
 
     this.params = [
@@ -23,8 +22,7 @@ export class RTCSetupCommand extends WebSocketCommand {
   }
 
   handleMessage(message: { result: RTCSessionDescription }) {
-    
-    console.log("RTC SetupCommand", message)
+    console.log('RTC SetupCommand', message)
 
     if (message.result) {
       setRemoteDescription(message.result)
@@ -36,27 +34,24 @@ export class RTCSetupCommand extends WebSocketCommand {
  * Websocket command to communicate the availability of a new RTC candidate
  */
 export class RTCCandidateCommand extends WebSocketCommand {
-
-  method = "update_rtc"
+  method = 'update_rtc'
 
   constructor(candidate: RTCIceCandidate) {
     super()
 
-    this.params = [ 
+    this.params = [
       {
         connection_id: this.connectionId
-      }, 
-      candidate 
+      },
+      candidate
     ]
 
     this.handler = this.handleMessage
   }
 
-  
   handleMessage(message: { result: null }) {
     if (message.result !== null) {
-      console.log("RTCCandidateCommand - Error", message)
+      console.log('RTCCandidateCommand - Error', message)
     }
   }
 }
-
