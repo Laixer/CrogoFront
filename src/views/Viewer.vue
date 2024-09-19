@@ -26,15 +26,15 @@ const enableOverlay = false
 // Volvo
 // const instanceId = "38df5a6a-0b90-45f6-89eb-b831a3db555d"
 
-setTimeout(() => {
-  console.log('2000 ms na Viewer setup')
-  // console.log('timeout')
+// setTimeout(() => {
+//   console.log('2000 ms na Viewer setup')
+// console.log('timeout')
 
-  // Cargo.reboot()
-  // Cargo.echo()
-  // Cargo.engineRequestRPM(800)
-  // Cargo.disconnect()
-}, 2000)
+// Cargo.reboot()
+// Cargo.echo()
+// Cargo.engineRequestRPM(800)
+// Cargo.disconnect()
+// }, 2000)
 
 try {
   if (instanceId) {
