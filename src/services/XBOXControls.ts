@@ -39,13 +39,15 @@ export class AxisEvent extends ControllerEvent {
 
 export class ButtonEvent extends ControllerEvent {
   btn: Button
-  pressed: boolean
+  // pressed: boolean
+  value: number
 
-  constructor(btn: Button, pressed: boolean) {
+  constructor(btn: Button, value: number) {
     super('ButtonEvent')
 
     this.btn = btn
-    this.pressed = pressed
+    // this.pressed = pressed
+    this.value = value
   }
 }
 
@@ -62,7 +64,7 @@ class GamePadState {
    * Track the last known state so we can emit changes to the state
    */
   lastKnownState: {
-    buttons: Record<number, boolean>
+    buttons: Record<number, number>
     axes: Record<number, number>
   } = {
       buttons: {},
@@ -74,7 +76,7 @@ class GamePadState {
 
     for (let btn in Object.keys(Button)) {
       console.log('btn init state...', btn, false)
-      this.lastKnownState.buttons[btn] = false
+      this.lastKnownState.buttons[btn] = 0
     }
 
     for (let axis in Object.keys(Axis)) {
@@ -218,14 +220,14 @@ export class XBOXControls {
   /**
    * Detect changes in button states
    */
-  checkButtonState(buttons: ReadonlyArray<GamepadButton>, buttonState: Record<string, boolean>) {
+  checkButtonState(buttons: ReadonlyArray<GamepadButton>, buttonState: Record<string, number>) {
     for (let btn in Object.keys(Button)) {
-      if (buttons[btn]?.pressed !== buttonState[btn]) {
-        buttonState[btn] = buttons[btn]?.pressed
+      if (buttonState[btn] !== buttons[btn]?.value) {
+        buttonState[btn] = buttons[btn]?.value
 
         // YaY for TS
         console.log('btn', btn, buttonState[btn])
-        console.log('btn2', btn, buttons[btn]?.value)
+        // console.log('btn2', btn, buttons[btn]?.value)
         this.emit('gamepad.btn', new ButtonEvent(Number(btn), buttonState[btn]))
       }
     }
