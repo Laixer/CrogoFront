@@ -31,7 +31,7 @@ export const connectController = function () {
   XBOXControlsInstance.subscribe('gamepad.btn', function (event: ButtonEvent) {
     switch (event.btn) {
       case Button.B: {
-        if (event.value === 1) {
+        if (event.isPressed()) {
           Cargo.stopAllMotion()
         } else {
           Cargo.resumeAllMotion()
@@ -39,16 +39,16 @@ export const connectController = function () {
         break
       }
       case Button.LB: {
-        // LIMP_LEFT backwards if event.value === 1
+        // LIMP_LEFT backwards if event.isPressed()
         break
       }
       case Button.RB: {
-        // LIMP_RIGHT backwards if event.value === 1
+        // LIMP_RIGHT backwards if event.isPressed()
         break
       }
       case Button.X: {
         // This locks both tracks together
-        // set drive lock if event.value === 1
+        // set drive lock if event.isPressed()
         break
       }
       case Button.LT: {

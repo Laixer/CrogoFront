@@ -39,15 +39,17 @@ export class AxisEvent extends ControllerEvent {
 
 export class ButtonEvent extends ControllerEvent {
   btn: Button
-  // pressed: boolean
   value: number
 
   constructor(btn: Button, value: number) {
     super('ButtonEvent')
 
     this.btn = btn
-    // this.pressed = pressed
     this.value = value
+  }
+
+  isPressed() {
+    return this.value === 1
   }
 }
 
