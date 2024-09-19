@@ -12,10 +12,10 @@ export enum Axis {
 // TODO: Add all buttons
 // TODO: for ... in  issue with mixed enum key/values
 export enum Button {
-  'A' = 0,
-  'B' = 1,
-  'X' = 2,
-  'Y' = 3,
+  'A' = 0, // Confirm
+  'B' = 1, // Abort
+  'X' = 2, // DriveLock
+  'Y' = 3, // LimitMotion
   'LB' = 4,
   'RB' = 5,
   'LT' = 6,
@@ -225,6 +225,7 @@ export class XBOXControls {
 
         // YaY for TS
         console.log('btn', btn, buttonState[btn])
+        console.log('btn2', btn, buttons[btn]?.value)
         this.emit('gamepad.btn', new ButtonEvent(Number(btn), buttonState[btn]))
       }
     }

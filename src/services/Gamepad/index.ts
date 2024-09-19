@@ -40,7 +40,28 @@ export const connectController = function () {
 
   XBOXControlsInstance.subscribe('gamepad.axis', function (event: AxisEvent) {
     if (Object.prototype.hasOwnProperty.call(ActuatorByAxis, event.axis)) {
-      Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(event.value))
+
+      switch (ActuatorByAxis[event.axis]) {
+        case Actuator.BOOM: {
+          const value = Math.round((scaleAxisValue(event.value) * -1) / 2)
+          // console.log('Cargo.motionChange', 'Actuator.BOOM', value)
+          Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(event.value))
+          break
+        }
+        case Actuator.ATTACHMENT: {
+          const value = Math.round((scaleAxisValue(event.value) * 1) / 2)
+          // console.log('Cargo.motionChange', 'Actuator.ATTACHMENT', value)
+          Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(event.value))
+          break
+        }
+        default: {
+          const value = scaleAxisValue(event.value)
+          // console.log('Cargo.motionChange', ActuatorByAxis[event.axis], value)
+          Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(event.value))
+          break
+        }
+      }
+
     }
   })
 
