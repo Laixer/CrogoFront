@@ -8,7 +8,7 @@ const handleStopMotion = function handleStopMotion() {
 </script>
 
 <template>
-  <Button class="StopMotion" small secondary @click="handleStopMotion"> stop motion </Button>
+  <Button class="StopMotion" small secondary @click="handleStopMotion"> lock motion </Button>
 </template>
 
 <style>

@@ -28,6 +28,10 @@ const ActuatorByAxis = {
 export const connectController = function () {
   XBOXControlsInstance = new XBOXControls()
 
+  let driveLock = false
+  let driveLeftBackwards = false
+  let driveRightBackwards = false
+
   XBOXControlsInstance.subscribe('gamepad.btn', function (event: ButtonEvent) {
     switch (event.btn) {
       case Button.B: {
@@ -39,28 +43,39 @@ export const connectController = function () {
         break
       }
       case Button.LB: {
-        // LIMP_LEFT backwards if event.isPressed()
+        driveLeftBackwards = event.isPressed()
         break
       }
       case Button.RB: {
-        // LIMP_RIGHT backwards if event.isPressed()
+        driveRightBackwards = event.isPressed()
         break
       }
       case Button.X: {
-        // This locks both tracks together
-        // set drive lock if event.isPressed()
+        driveLock = event.isPressed()
         break
       }
       case Button.LT: {
-        const value = scaleAxisValue(event.value)
-        console.log('Cargo.motionChange', 'Actuator.LEFT_TRACK', value)
-        // Cargo.motionChange(Actuator.LIMP_LEFT, scaleAxisValue(value))
+        const valueScaled = scaleAxisValue(event.value)
+        const value = driveLeftBackwards ? -valueScaled : valueScaled
+        if (driveLock) {
+          console.log('Cargo.straightDrive', value)
+          Cargo.straightDrive(scaleAxisValue(value))
+        } else {
+          console.log('Cargo.motionChange', 'Actuator.LEFT_TRACK', value)
+          Cargo.motionChange(Actuator.LIMP_LEFT, scaleAxisValue(value))
+        }
         break
       }
       case Button.RT: {
-        const value = scaleAxisValue(event.value)
-        console.log('Cargo.motionChange', 'Actuator.RIGHT_TRACK', value)
-        // Cargo.motionChange(Actuator.LIMP_RIGHT, scaleAxisValue(value))
+        const valueScaled = scaleAxisValue(event.value)
+        const value = driveRightBackwards ? -valueScaled : valueScaled
+        if (driveLock) {
+          console.log('Cargo.straightDrive', value)
+          Cargo.straightDrive(scaleAxisValue(value))
+        } else {
+          console.log('Cargo.motionChange', 'Actuator.RIGHT_TRACK', value)
+          Cargo.motionChange(Actuator.LIMP_RIGHT, scaleAxisValue(value))
+        }
         break
       }
     }
