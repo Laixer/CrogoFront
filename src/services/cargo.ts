@@ -85,6 +85,8 @@ export const resumeAllMotion = function () {
 }
 
 export const straightDrive = function (value: number) {
+  console.log("straightDrive", value)
+
   if (!_isConnected) {
     // Note: still trying, due to importance of command
     console.error('Cargo - Trying to straigth drive without active connection')
@@ -165,7 +167,7 @@ export const disconnect = function () {
 }
 
 export const motionChange = function (actuator: Actuator, value: number) {
-  console.log(actuator, value)
+  console.log("motionChange", actuator, value)
 
   if (!_isConnected) {
     console.error('Cargo - Trying to change motion without active connection')

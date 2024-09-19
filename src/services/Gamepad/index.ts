@@ -56,25 +56,27 @@ export const connectController = function () {
       }
       case Button.LT: {
         const valueScaled = scaleAxisValue(event.value)
-        const value = driveLeftBackwards ? -valueScaled : valueScaled
+        const valueScaledRamped = valueScaled < 2000 ? 0 : valueScaled
+        const value = driveLeftBackwards ? -valueScaledRamped : valueScaledRamped
         if (driveLock) {
           console.log('Cargo.straightDrive', value)
           Cargo.straightDrive(scaleAxisValue(value))
         } else {
           console.log('Cargo.motionChange', 'Actuator.LEFT_TRACK', value)
-          Cargo.motionChange(Actuator.LIMP_LEFT, scaleAxisValue(value))
+          Cargo.motionChange(Actuator.LIMP_LEFT, value)
         }
         break
       }
       case Button.RT: {
         const valueScaled = scaleAxisValue(event.value)
-        const value = driveRightBackwards ? -valueScaled : valueScaled
+        const valueScaledRamped = valueScaled < 2000 ? 0 : valueScaled
+        const value = driveRightBackwards ? -valueScaledRamped : valueScaledRamped
         if (driveLock) {
           console.log('Cargo.straightDrive', value)
-          Cargo.straightDrive(scaleAxisValue(value))
+          Cargo.straightDrive(value)
         } else {
           console.log('Cargo.motionChange', 'Actuator.RIGHT_TRACK', value)
-          Cargo.motionChange(Actuator.LIMP_RIGHT, scaleAxisValue(value))
+          Cargo.motionChange(Actuator.LIMP_RIGHT, value)
         }
         break
       }
@@ -89,36 +91,30 @@ export const connectController = function () {
           // boom up is negative
           const value = Math.round((scaleAxisValue(event.value) * -1) / 2)
           console.log('Cargo.motionChange', 'Actuator.BOOM', value)
-          // Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(value))
+          Cargo.motionChange(ActuatorByAxis[event.axis], value)
           break
         }
         case Actuator.ATTACHMENT: {
           // attachment left is positive
           const value = Math.round((scaleAxisValue(event.value) * -1) / 2)
           console.log('Cargo.motionChange', 'Actuator.ATTACHMENT', value)
-          // Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(value))
+          Cargo.motionChange(ActuatorByAxis[event.axis], value)
           break
         }
         case Actuator.ARM: {
           // arm out is positive
           const value = Math.round((scaleAxisValue(event.value) * -1) / 2)
           console.log('Cargo.motionChange', 'Actuator.ARM', value)
-          // Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(value))
+          Cargo.motionChange(ActuatorByAxis[event.axis], value)
           break
         }
         case Actuator.SLEW: {
           // slew left is positive
           const value = Math.round((scaleAxisValue(event.value) * -1) / 2)
           console.log('Cargo.motionChange', 'Actuator.SLEW', value)
-          // Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(value))
+          Cargo.motionChange(ActuatorByAxis[event.axis], value)
           break
         }
-        // default: {
-        //   const value = scaleAxisValue(event.value)
-        //   // console.log('Cargo.motionChange', ActuatorByAxis[event.axis], value)
-        //   Cargo.motionChange(ActuatorByAxis[event.axis], scaleAxisValue(value))
-        //   break
-        // }
       }
 
     }
