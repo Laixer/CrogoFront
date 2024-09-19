@@ -26,8 +26,6 @@ const ActuatorByAxis = {
 }
 
 export const connectController = function () {
-  console.log('CONNECT CONTROLLER')
-
   XBOXControlsInstance = new XBOXControls()
 
   XBOXControlsInstance.subscribe('gamepad.btn', function (event: ButtonEvent) {

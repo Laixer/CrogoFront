@@ -15,11 +15,15 @@ export enum Button {
   'A' = 0,
   'B' = 1,
   'X' = 2,
-  'Y' = 3
+  'Y' = 3,
+  'LB' = 4,
+  'RB' = 5,
+  'LT' = 6,
+  'RT' = 7,
   // ... 15
 }
 
-export class ControllerEvent extends PubSubEvent {}
+export class ControllerEvent extends PubSubEvent { }
 
 export class AxisEvent extends ControllerEvent {
   axis: Axis
@@ -61,9 +65,9 @@ class GamePadState {
     buttons: Record<number, boolean>
     axes: Record<number, number>
   } = {
-    buttons: {},
-    axes: {}
-  }
+      buttons: {},
+      axes: {}
+    }
 
   constructor(gamepad: Gamepad) {
     this.gamepad = gamepad
