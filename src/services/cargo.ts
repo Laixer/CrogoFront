@@ -63,39 +63,6 @@ export const isConnected = function () {
   return !!_isConnected
 }
 
-export const stopAllMotion = function () {
-  console.log('Stop all motion')
-
-  if (!_isConnected) {
-    // Note: still trying, due to importance of command
-    console.error('Cargo - Trying to stop motion without active connection')
-  }
-
-  send(Motion.stop_all())
-}
-
-export const resumeAllMotion = function () {
-  if (!_isConnected) {
-    // Note: still trying, due to importance of command
-    console.error('Cargo - Trying to resume motion without active connection')
-    return
-  }
-
-  send(Motion.resume_all())
-}
-
-export const straightDrive = function (value: number) {
-  console.log("straightDrive", value)
-
-  if (!_isConnected) {
-    // Note: still trying, due to importance of command
-    console.error('Cargo - Trying to straigth drive without active connection')
-    return
-  }
-
-  send(Motion.straight_drive(value))
-}
-
 // TODO: Test
 export const changeBoom = function () {
   send(
@@ -166,8 +133,43 @@ export const disconnect = function () {
   sendCommand(new DisconnectRTCCommand())
 }
 
+export const stopAllMotion = function () {
+  console.log('Stop all motion')
+
+  if (!_isConnected) {
+    // Note: still trying, due to importance of command
+    console.error('Cargo - Trying to stop motion without active connection')
+  }
+
+  send(Motion.stop_all())
+}
+
+export const resumeAllMotion = function () {
+  if (!_isConnected) {
+    // Note: still trying, due to importance of command
+    console.error('Cargo - Trying to resume motion without active connection')
+    return
+  }
+
+  send(Motion.resume_all())
+}
+
+export const straightDrive = function (value: number) {
+  const actuatorValue = Math.round(value)
+  console.log("straightDrive", actuatorValue)
+
+  if (!_isConnected) {
+    // Note: still trying, due to importance of command
+    console.error('Cargo - Trying to straigth drive without active connection')
+    return
+  }
+
+  send(Motion.straight_drive(actuatorValue))
+}
+
 export const motionChange = function (actuator: Actuator, value: number) {
-  console.log("motionChange", actuator, value)
+  const actuatorValue = Math.round(value)
+  console.log("motionChange", actuator, actuatorValue)
 
   if (!_isConnected) {
     console.error('Cargo - Trying to change motion without active connection')
@@ -178,7 +180,7 @@ export const motionChange = function (actuator: Actuator, value: number) {
     Motion.change([
       {
         actuator,
-        value
+        value: actuatorValue
       }
     ])
   )
