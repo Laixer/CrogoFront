@@ -19,63 +19,51 @@ const label = ref('CONNECTION LOST')
 let timeoutReference: ReturnType<typeof setTimeout> | undefined = undefined
 
 // Subscribe to all message types, before ignoring duplicates
-Cargo.PubSubService.subscribe(
-  '*',
-  () => {
-    // Clear the warning when a message arrives.
-    // This typically creates a flashing effect in case the unstable connection warning is triggered
-    show.value = false
+Cargo.PubSubService.subscribe('incoming', () => {
+  // Clear the warning when a message arrives.
+  // This typically creates a flashing effect in case the unstable connection warning is triggered
+  show.value = false
 
+  if (timeoutReference) {
+    clearTimeout(timeoutReference)
+  }
+
+  timeoutReference = setTimeout(() => {
+    // We're either already showing the Unstable warning, or showing the Lost warning, which is more important
+    if (show.value === false) {
+      label.value = 'CONNECTION UNSTABLE'
+      show.value = true
+    }
+  }, timeoutTreshold)
+})
+
+// Possible states: "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new"
+Cargo.PubSubService.subscribe('connection.connectionStateChange', (event: ConnectionStateEvent) => {
+  console.log('Subscribe connection warning', event.state)
+
+  if (event.state && ['closed', 'disconnected', 'failed'].includes(event.state)) {
+    // Upon connection failure, the connection unstable notice is cancelled
     if (timeoutReference) {
       clearTimeout(timeoutReference)
     }
 
-    timeoutReference = setTimeout(() => {
-      // We're either already showing the Unstable warning, or showing the Lost warning, which is more important
-      if (show.value === false) {
-        label.value = 'CONNECTION UNSTABLE'
-        show.value = true
-      }
-    }, timeoutTreshold)
-  },
-  'incoming'
-)
-
-// Possible states: "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new"
-Cargo.PubSubService.subscribe(
-  'connectionStateChange',
-  (event: ConnectionStateEvent) => {
-    console.log('Subscribe connection warning', event.state)
-
-    if (event.state && ['closed', 'disconnected', 'failed'].includes(event.state)) {
-      // Upon connection failure, the connection unstable notice is cancelled
-      if (timeoutReference) {
-        clearTimeout(timeoutReference)
-      }
-
-      label.value = 'CONNECTION LOST'
-      show.value = true
-    }
-  },
-  'connection'
-)
+    label.value = 'CONNECTION LOST'
+    show.value = true
+  }
+})
 
 // (current) Possible states: "closed" or "closing"
-Cargo.PubSubService.subscribe(
-  'channelStateChange',
-  (event: ChannelStateEvent) => {
-    if (event.state && ['closed', 'closing'].includes(event.state)) {
-      // Upon connection failure, the connection unstable notice is cancelled
-      if (timeoutReference) {
-        clearTimeout(timeoutReference)
-      }
-
-      label.value = 'CONNECTION LOST'
-      show.value = true
+Cargo.PubSubService.subscribe('channelStateChange', (event: ChannelStateEvent) => {
+  if (event.state && ['closed', 'closing'].includes(event.state)) {
+    // Upon connection failure, the connection unstable notice is cancelled
+    if (timeoutReference) {
+      clearTimeout(timeoutReference)
     }
-  },
-  'connection'
-)
+
+    label.value = 'CONNECTION LOST'
+    show.value = true
+  }
+})
 </script>
 
 <template>

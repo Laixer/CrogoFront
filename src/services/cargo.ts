@@ -49,8 +49,8 @@ export const connect = async function connect(uuid: string) {
   // Connect the GamePad controller
   connectGamePadController()
 
-  PubSubService.subscribe('connectionStateChange', _registerDisconnect, 'connection')
-  PubSubService.subscribe('channelStateChange', _registerDisconnect, 'connection')
+  PubSubService.subscribe('connection.connectionStateChange', _registerDisconnect)
+  PubSubService.subscribe('connection.channelStateChange', _registerDisconnect)
 }
 
 const _registerDisconnect = (state: string) => {
@@ -156,7 +156,7 @@ export const resumeAllMotion = function () {
 
 export const straightDrive = function (value: number) {
   const actuatorValue = Math.round(value)
-  console.log("straightDrive", actuatorValue)
+  console.log('straightDrive', actuatorValue)
 
   if (!_isConnected) {
     // Note: still trying, due to importance of command
@@ -169,7 +169,7 @@ export const straightDrive = function (value: number) {
 
 export const motionChange = function (actuator: Actuator, value: number) {
   const actuatorValue = Math.round(value)
-  console.log("motionChange", actuator, actuatorValue)
+  console.log('motionChange', actuator, actuatorValue)
 
   if (!_isConnected) {
     console.error('Cargo - Trying to change motion without active connection')

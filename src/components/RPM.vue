@@ -10,16 +10,12 @@ import type { IncomingMessageEvent } from '@/services/WebRTC/index.js'
 
 const RPM: Ref<number> = ref(0)
 
-Cargo.PubSubService.subscribe(
-  MessageType.ENGINE,
-  (event: IncomingMessageEvent) => {
-    // TODO: create EngineMessageEvent
-    const message = event.message as Engine
+Cargo.PubSubService.subscribe(`incoming.${MessageType.ENGINE}`, (event: IncomingMessageEvent) => {
+  // TODO: create EngineMessageEvent
+  const message = event.message as Engine
 
-    RPM.value = message.rpm
-  },
-  'incoming'
-)
+  RPM.value = message.rpm
+})
 </script>
 
 <template>

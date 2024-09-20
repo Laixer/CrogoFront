@@ -22,41 +22,29 @@ const signalStrength: ComputedRef<number> = computed(() => {
   return tresholds.filter((treshold) => treshold > echoMS.value).length
 })
 
-Cargo.PubSubService.subscribe(
-  MessageType.ECHO,
-  (event: IncomingMessageEvent) => {
-    // TODO: create EchoMessageEvent
-    const message = event.message as Echo
+Cargo.PubSubService.subscribe(`incoming.${MessageType.ECHO}`, (event: IncomingMessageEvent) => {
+  // TODO: create EchoMessageEvent
+  const message = event.message as Echo
 
-    echoMS.value = Date.now() - Number(message.payload)
-  },
-  'incoming'
-)
+  echoMS.value = Date.now() - Number(message.payload)
+})
 
 /**
  * Clear the latency value upon diconnect
  */
-Cargo.PubSubService.subscribe(
-  'connectionStateChange',
-  (event: ConnectionStateEvent) => {
-    if (event.state && ['closed', 'disconnected', 'failed'].includes(event.state)) {
-      echoMS.value = 0
-      stopPing()
-    }
-  },
-  'connection'
-)
+Cargo.PubSubService.subscribe('connection.connectionStateChange', (event: ConnectionStateEvent) => {
+  if (event.state && ['closed', 'disconnected', 'failed'].includes(event.state)) {
+    echoMS.value = 0
+    stopPing()
+  }
+})
 
-Cargo.PubSubService.subscribe(
-  'channelStateChange',
-  (event: ChannelStateEvent) => {
-    if (event.state && ['closed', 'closing'].includes(event.state)) {
-      echoMS.value = 0
-      stopPing()
-    }
-  },
-  'connection'
-)
+Cargo.PubSubService.subscribe('connection.channelStateChange', (event: ChannelStateEvent) => {
+  if (event.state && ['closed', 'closing'].includes(event.state)) {
+    echoMS.value = 0
+    stopPing()
+  }
+})
 
 const startPing = function startPing() {
   intervalReferenceId = setInterval(() => {

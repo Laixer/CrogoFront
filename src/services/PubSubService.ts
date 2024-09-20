@@ -12,9 +12,6 @@ export interface Channel {
   // An optional description
   description?: string
 
-  // An optional group to which the channel belongs (e.g. Gamepad)
-  group?: string
-
   // Whether to pass
   log?: boolean
 
@@ -36,7 +33,6 @@ export class PubSub {
   channelDefaults = {
     desciption: 'No description available',
     subcriptions: [],
-    group: undefined,
     log: !!((import.meta.env.VITE_PUBSUBSERVICE_LOG || 'false').toLocaleLowerCase() === 'true')
   }
 
@@ -44,12 +40,6 @@ export class PubSub {
    * The registered channels
    */
   channels: Record<string | number, Channel> = {}
-
-  /**
-   * Subscriptions to a group of channels
-   *  Registered separately because channels may be added / removed, making group subscriptions difficult
-   */
-  groupSubscriptions: Record<string | number, Function[]> = {}
 
   /****************************************************************************
    * Constructor
@@ -61,21 +51,22 @@ export class PubSub {
   ) {
     // register the internal logging channel
     this.registerChannel({
-      identifier: 'log',
-      group: '_',
+      identifier: 'internal.log',
       description: 'A channel that can be used to log events on channels that have logging enabled',
       log: false
     })
 
     // by default the internal logging channel outputs to the console
     if (!!options.logToConsole) {
-      this.subscribe('log', (event: PubSubEvent) => console.log(event))
+      this.subscribe('internal.log', (event: PubSubEvent) => console.log(event))
     }
 
     // allow default options for new channels to be specified
     if (options.channelDefaults) {
       this.setChannelDefaults(options.channelDefaults)
     }
+
+    this.emit('internal.log', new PubSubEvent('PubSubService has been initiated'))
   }
 
   /****************************************************************************
@@ -92,6 +83,41 @@ export class PubSub {
   }
 
   /**
+   * Whether a channel exists
+   */
+  hasChannel(identifier: string | number) {
+    return !!this.channels[identifier]
+  }
+
+  /**
+   * Check whether the channel has a parent channel
+   */
+  hasParentChannel(identifier: string | number) {
+    return typeof identifier === 'string' && identifier.split('.').length !== 1
+  }
+
+  /**
+   * Get the parent channel identifier from a child channel
+   * or return false if the channel has no parent
+   */
+  getParentChannelIdentifier(identifier: string | number): string | false {
+    if (typeof identifier === 'string' && this.hasParentChannel(identifier)) {
+      return identifier.split('.').slice(0, -1).join('.')
+    }
+    return false
+  }
+
+  /**
+   * Remove '.*' from the end of the identifier
+   */
+  cleanChannelIdentifier(identifier: string | number): string | number {
+    if (typeof identifier === 'string' && identifier.endsWith('.*')) {
+      return identifier.split('.').slice(0, -1).join('.')
+    }
+    return identifier
+  }
+
+  /**
    * Register a channel
    */
   registerChannel(channel: Channel): PubSub {
@@ -99,11 +125,14 @@ export class PubSub {
       throw new Error('A channel requires an identifier')
     }
 
+    channel.identifier = this.cleanChannelIdentifier(channel.identifier)
+
+    if (this.hasChannel(channel.identifier)) {
+      throw new Error('Channel is already registered')
+    }
+
     // Use defaults if information was missing
     channel.description = channel.description || this.channelDefaults.desciption
-
-    // TODO: Use prefix separated by . as group if not set
-    channel.group = channel.group || this.channelDefaults.group
 
     if (channel.log !== true && channel.log !== false) {
       channel.log = !!this.channelDefaults.log
@@ -119,15 +148,29 @@ export class PubSub {
     // Add to the available channels
     this.channels[channel.identifier] = channel
 
+    // If this is a nested channel we should perhaps also create the parent (e.g. the parent of 'gamepad.button' is 'gamepad')
+    if (this.hasParentChannel(channel.identifier)) {
+      const parentIdentifier = this.getParentChannelIdentifier(channel.identifier)
+      if (parentIdentifier && !this.hasChannel(parentIdentifier)) {
+        this.registerChannel({
+          identifier: parentIdentifier,
+          log: channel.log
+        })
+      }
+    }
+
     // Do some logging
     if (this.channels[channel.identifier].log) {
-      this.emit('log', new PubSubEvent(`Channel - ${channel.identifier} - channel registered`))
+      this.emit(
+        'internal.log',
+        new PubSubEvent(`Channel: ${channel.identifier} - channel registered`)
+      )
 
       if (this.channels[channel.identifier].subcriptions?.length !== 0) {
         this.emit(
-          'log',
+          'internal.log',
           new PubSubEvent(
-            `Channel - ${channel.identifier} - added ${this.channels[channel.identifier].subcriptions?.length} subscription(s)`
+            `Channel: ${channel.identifier} - added ${this.channels[channel.identifier].subcriptions?.length} subscription(s)`
           )
         )
       }
@@ -151,6 +194,12 @@ export class PubSub {
         }
       )
     } else {
+      this.emit(
+        'internal.log',
+        new PubSubEvent(
+          `Channel: ${channel?.identifier} - failed to update channel: unkown channel`
+        )
+      )
       throw new Error(`Unknown channel: ${channel?.identifier}`)
     }
 
@@ -159,11 +208,13 @@ export class PubSub {
 
   /**
    * Remove a channel and all it's subscriptions
+   *  TODO: What about the child channels?
    */
   removeChannel(identifier: keyof typeof this.channels) {
+    identifier = this.cleanChannelIdentifier(identifier)
     if (this.channels[identifier]) {
       if (this.channels[identifier].log) {
-        this.emit('log', new PubSubEvent(`Channel - ${identifier} - channel removed`))
+        this.emit('internal.log', new PubSubEvent(`Channel: ${identifier} - channel removed`))
       }
 
       delete this.channels[identifier]
@@ -184,30 +235,26 @@ export class PubSub {
   /**
    * Add a subscription to one of the channels
    */
-  subscribe(
-    identifier: keyof typeof this.channels | null,
-    handler: Function,
-    group?: string
-  ): Function {
-    if ((identifier === null || identifier === '*') && group) {
-      return this.subscribeToGroup(group, handler)
-    }
-
+  subscribe(identifier: keyof typeof this.channels | null, handler: Function): Function {
     if (!identifier) {
       throw new Error('Identifier is required')
     }
 
+    identifier = this.cleanChannelIdentifier(identifier)
+
     if (!this.channels[identifier]) {
       this.registerChannel({
-        identifier,
-        group
+        identifier
       })
     }
 
     // Verify that the handler is a Function
     // TODO: Support Async functions
     if ({}.toString.call(handler) !== '[object Function]') {
-      this.emit('log', new PubSubEvent(`Channel - ${identifier} - failed to add a subscription`))
+      this.emit(
+        'internal.log',
+        new PubSubEvent(`Channel: ${identifier} - failed to add a subscription`)
+      )
       throw new Error(`Handler has to be a Function - ${identifier}`)
     }
 
@@ -224,7 +271,10 @@ export class PubSub {
     this?.channels?.[identifier]?.subcriptions?.push(handler)
 
     if (this.channels[identifier].log) {
-      this.emit('log', new PubSubEvent(`Channel - ${identifier} - a subscription has been added`))
+      this.emit(
+        'internal.log',
+        new PubSubEvent(`Channel: ${identifier} - a subscription has been added`)
+      )
     }
 
     return () => this.unsubscribe(identifier, handler)
@@ -233,23 +283,16 @@ export class PubSub {
   /**
    * Remove a subscription from one of the channels
    */
-  unsubscribe(
-    identifier: keyof typeof this.channels | null,
-    handler: Function,
-    group?: string
-  ): PubSub {
-    if ((identifier === null || identifier === '*') && group) {
-      return this.unsubscribeFromGroup(group, handler)
-    }
-
+  unsubscribe(identifier: keyof typeof this.channels | null, handler: Function): PubSub {
     if (!identifier) {
       throw new Error('Identifier is required')
     }
 
+    identifier = this.cleanChannelIdentifier(identifier)
+
     if (!this.channels[identifier]) {
       this.registerChannel({
-        identifier,
-        group
+        identifier
       })
     }
 
@@ -267,7 +310,10 @@ export class PubSub {
     )
 
     if (this.channels[identifier].log) {
-      this.emit('log', new PubSubEvent(`Channel - ${identifier} - a subscription has been removed`))
+      this.emit(
+        'internal.log',
+        new PubSubEvent(`Channel: ${identifier} - a subscription has been removed`)
+      )
     }
 
     return this
@@ -276,10 +322,24 @@ export class PubSub {
   /**
    * Emit an event to all handlers over a channel
    */
-  emit(identifier: keyof typeof this.channels, event: PubSubEvent): PubSub {
+  emit(
+    identifier: keyof typeof this.channels,
+    event: PubSubEvent,
+    parent: boolean = false
+  ): PubSub {
+    if (!identifier) {
+      this.emit(
+        'internal.log',
+        new PubSubEvent(`Channel: unknonwn - emitting an event without a channel reference`)
+      )
+      throw new Error('Identifier is required')
+    }
+
+    identifier = this.cleanChannelIdentifier(identifier)
+
     const channel = this.channels?.[identifier]
     if (!channel) {
-      this.emit('log', new PubSubEvent(`Channel - ${identifier} - Unknown channel`))
+      this.emit('internal.log', new PubSubEvent(`Channel: ${identifier} - Unknown channel`))
       return this
     }
 
@@ -289,72 +349,34 @@ export class PubSub {
     }
 
     // Go over group based subscribers
-    if (channel.group && this.groupSubscriptions[channel.group]) {
-      for (let handler of this.groupSubscriptions[channel.group] || []) {
-        handler(event)
+    if (this.hasParentChannel(identifier)) {
+      const parentIdentifier = this.getParentChannelIdentifier(identifier)
+      if (parentIdentifier) {
+        this.emit(parentIdentifier, event, true)
       }
     }
 
     // The catch all channel
-    if (this.channels['*']) {
+    if (parent === false && this.channels['*']) {
       for (let handler of this.channels['*']?.subcriptions || []) {
         handler(event)
       }
     }
 
-    // Ignore the 'log' identifier to avoid endless recursion
+    // Ignore the 'internal.log' identifier to avoid endless recursion
     // TODO: Include Event details
-    if (identifier !== 'log' && this.channels?.[identifier]?.log) {
+    if (
+      identifier !== 'internal' &&
+      identifier !== 'internal.log' &&
+      this.channels?.[identifier]?.log
+    ) {
       this.emit(
-        'log',
+        'internal.log',
         new PubSubEvent(
-          `Channel - ${identifier} - message sent to ${this.channels[identifier].subcriptions?.length} subscribers`
+          `Channel: ${identifier} - message sent to ${this.channels[identifier].subcriptions?.length} subscribers`
         )
       )
-      if (channel.group && this.groupSubscriptions[channel.group]) {
-        this.emit(
-          'log',
-          new PubSubEvent(
-            `Channel - ${identifier} - message sent to ${this.groupSubscriptions[channel.group]?.length} group subscribers`
-          )
-        )
-      }
     }
-    return this
-  }
-
-  /****************************************************************************
-   * Group Subscriptions
-   */
-
-  /**
-   * Add a group based subscription (receives all messages from any channel in the specified group)
-   */
-  subscribeToGroup(group: string, handler: Function): Function {
-    this.groupSubscriptions[group] = this.groupSubscriptions[group] || []
-
-    // TODO: Support Async functions
-    if ({}.toString.call(handler) !== '[object Function]') {
-      this.emit('log', new PubSubEvent(`Group - ${group} - failed to add a subscription`))
-      throw new Error(`Handler has to be a Function - ${group}`)
-    }
-
-    this.groupSubscriptions[group].push(handler)
-
-    this.emit('log', new PubSubEvent(`Group - ${group} - Added group subscription`))
-
-    return () => this.unsubscribeFromGroup(group, handler)
-  }
-
-  /**
-   * Remove a group based subscription
-   */
-  unsubscribeFromGroup(group: string, handler: Function): PubSub {
-    this.groupSubscriptions[group] = (this.groupSubscriptions[group] || []).filter(
-      (sub) => sub !== handler
-    )
-
-    this.emit('log', new PubSubEvent(`Group - ${group} - Removed group subscription`))
 
     return this
   }

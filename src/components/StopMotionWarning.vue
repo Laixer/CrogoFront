@@ -8,16 +8,12 @@ import type { IncomingMessageEvent } from '@/services/WebRTC/index.js'
 
 const show = ref(false)
 
-Cargo.PubSubService.subscribe(
-  MessageType.MOTION,
-  (event: IncomingMessageEvent) => {
-    // TODO: create MotionMessageEvent
-    const message = event.message as Motion
+Cargo.PubSubService.subscribe(`incoming.${MessageType.MOTION}`, (event: IncomingMessageEvent) => {
+  // TODO: create MotionMessageEvent
+  const message = event.message as Motion
 
-    show.value = message.type === MotionType.STOP_ALL
-  },
-  'incoming'
-)
+  show.value = message.type === MotionType.STOP_ALL
+})
 </script>
 
 <template>

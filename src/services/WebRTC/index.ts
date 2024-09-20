@@ -81,7 +81,7 @@ export const onConnectionStateChange = function onConnectionStateChange() {
   console.log('onConnectionStateChange', WebRTCConnection?.connectionState, Date.now())
 
   PubSubService.emit(
-    'connectionStateChange',
+    'connection.connectionStateChange',
     new ConnectionStateEvent(WebRTCConnection?.connectionState)
   )
 
@@ -96,11 +96,11 @@ export const onConnectionStateChange = function onConnectionStateChange() {
 export const initiateRTCConnection = function initiateRTCConnection() {
   // Register all incoming message types as a channel of the "incoming" group
   Object.keys(lastReceivedMessagesByType).forEach((messageType) => {
-    PubSubService.registerChannel({ identifier: messageType, group: 'incoming' })
+    PubSubService.registerChannel({ identifier: `incoming.${messageType}` })
   })
   // Register the 2 connection channels as the 'connection' group
-  PubSubService.registerChannel({ identifier: 'connectionStateChange', group: 'connection' })
-  PubSubService.registerChannel({ identifier: 'channelStateChange', group: 'connection' })
+  PubSubService.registerChannel({ identifier: 'connection.connectionStateChange' })
+  PubSubService.registerChannel({ identifier: 'connection.channelStateChange' })
 
   return new Promise<RTCPeerConnection>((resolve, reject) => {
     try {
@@ -127,12 +127,12 @@ export const initiateRTCConnection = function initiateRTCConnection() {
       CommandChannel.onclosing = (event) => {
         console.log('CommandChannel closing', event, Date.now())
 
-        PubSubService.emit('channelStateChange', new ChannelStateEvent('closing'))
+        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closing'))
       }
       CommandChannel.onclose = (event) => {
         console.log('CommandChannel close', event, Date.now())
 
-        PubSubService.emit('channelStateChange', new ChannelStateEvent('closed'))
+        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closed'))
       }
 
       // TODO: separate signal on receive message
@@ -148,12 +148,12 @@ export const initiateRTCConnection = function initiateRTCConnection() {
       SignalChannel.onclosing = (event) => {
         console.log('SignalChannel closing', event, Date.now())
 
-        PubSubService.emit('channelStateChange', new ChannelStateEvent('closing'))
+        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closing'))
       }
       SignalChannel.onclose = (event) => {
         console.log('SignalChannel close', event, Date.now())
 
-        PubSubService.emit('channelStateChange', new ChannelStateEvent('closed'))
+        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closed'))
       }
 
       // Resolve the promise when the connection is established
@@ -165,7 +165,7 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = onConnectionStateChange)
 
           PubSubService.emit(
-            'connectionStateChange',
+            'connection.connectionStateChange',
             new ConnectionStateEvent(WebRTCConnection?.connectionState)
           )
 
@@ -182,7 +182,10 @@ export const initiateRTCConnection = function initiateRTCConnection() {
                   receiver.transport.onstatechange = function (state) {
                     console.log('transport state', state, Date.now())
 
-                    PubSubService.emit('channelStateChange', new ChannelStateEvent(this.state))
+                    PubSubService.emit(
+                      'connection.channelStateChange',
+                      new ChannelStateEvent(this.state)
+                    )
                   }
                 }
 
@@ -219,7 +222,7 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           WebRTCConnection && (WebRTCConnection.onconnectionstatechange = null)
 
           PubSubService.emit(
-            'connectionStateChange',
+            'connection.connectionStateChange',
             new ConnectionStateEvent(WebRTCConnection?.connectionState)
           )
 
@@ -341,13 +344,13 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
     case MessageType.ECHO:
       const echo = Echo.fromBytes(event.data.slice(10))
 
-      PubSubService.emit(MessageType.ECHO, new IncomingMessageEvent(echo))
+      PubSubService.emit(`incoming.${MessageType.ECHO}`, new IncomingMessageEvent(echo))
       break
 
     case MessageType.STATUS:
       const moduleStatus = ModuleStatus.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       // console.log(moduleStatus)
-      PubSubService.emit(MessageType.STATUS, new IncomingMessageEvent(moduleStatus))
+      PubSubService.emit(`incoming.${MessageType.STATUS}`, new IncomingMessageEvent(moduleStatus))
       break
 
     case MessageType.ENGINE:
@@ -357,19 +360,19 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
         break
       }
 
-      PubSubService.emit(MessageType.ENGINE, new IncomingMessageEvent(engine))
+      PubSubService.emit(`incoming.${MessageType.ENGINE}`, new IncomingMessageEvent(engine))
       break
 
     case MessageType.CONTROL:
       const control = Control.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       // console.log(control)
-      PubSubService.emit(MessageType.CONTROL, new IncomingMessageEvent(control))
+      PubSubService.emit(`incoming.${MessageType.CONTROL}`, new IncomingMessageEvent(control))
       break
 
     case MessageType.MOTION:
       const motion = Motion.fromBytes(event.data.slice(10)) // TODO: This is temporary, frame/payload boundary could change
       // console.log(motion)
-      PubSubService.emit(MessageType.MOTION, new IncomingMessageEvent(motion))
+      PubSubService.emit(`incoming.${MessageType.MOTION}`, new IncomingMessageEvent(motion))
       break
 
     case MessageType.INSTANCE:
@@ -377,7 +380,7 @@ const onReceiveMessage = function onReceiveMessage(event: MessageEvent) {
       // console.log(instance)
       // TODO: Verify instance id
       // TODO: Verify version
-      PubSubService.emit(MessageType.INSTANCE, new IncomingMessageEvent(instance))
+      PubSubService.emit(`incoming.${MessageType.INSTANCE}`, new IncomingMessageEvent(instance))
       break
 
     case MessageType.ROTATOR:
