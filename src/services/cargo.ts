@@ -1,9 +1,4 @@
-import {
-  initiateRTCConnection,
-  send,
-  connectVideoElement,
-  subscribe
-} from '@/services/WebRTC/index.js'
+import { initiateRTCConnection, send, connectVideoElement } from '@/services/WebRTC/index.js'
 import { establishWebSocketConnection, sendCommand } from '@/services/websocket/index.js'
 import { Engine } from './WebRTC/commands/engine'
 import { Control, ControlType } from './WebRTC/commands/controls'
@@ -203,8 +198,7 @@ export default {
   reboot,
   disconnect,
 
-  // Subscribe to WebRTC events
-  subscribe,
+  // Subscribe to (WebRTC) events
   PubSubService,
 
   //

@@ -23,11 +23,6 @@ let CommandChannel: RTCDataChannel | null = null
 let SignalChannel: RTCDataChannel | null = null
 let VideoStream: MediaStream | null = null
 
-/**
- *
- */
-const subscriptions: Record<string, Function[]> = {}
-
 export const getWebRTCConnection = function getWebRTCConnection(): RTCPeerConnection | null {
   return WebRTCConnection
 }
@@ -84,13 +79,6 @@ export const onConnectionStateChange = function onConnectionStateChange() {
     'connection.connectionStateChange',
     new ConnectionStateEvent(WebRTCConnection?.connectionState)
   )
-
-  // if (Array.isArray(subscriptions['connectionStateChange'])) {
-  //   for (let handler of subscriptions['connectionStateChange']) {
-  //     // RTCPeerConnectionState: "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new"
-  //     handler(WebRTCConnection?.connectionState, event)
-  //   }
-  // }
 }
 
 export const initiateRTCConnection = function initiateRTCConnection() {
@@ -421,19 +409,6 @@ export const setRemoteDescription = async function setRemoteDescription(
     disconnect()
     throw err
   }
-}
-
-/**
- * Subsribe to WebRTC events
- * TODO: Refactor subscribe, etc to XBOXControls structure ?
- * TODO: Maybe create generic PubSub class ?
- */
-export const subscribe = function (
-  channel: MessageType | '*' | 'connectionStateChange' | 'channelStateChange',
-  handler: Function
-) {
-  subscriptions[channel] = subscriptions[channel] || []
-  subscriptions[channel].push(handler)
 }
 
 export const connectVideoElement = (video: HTMLVideoElement) => {
