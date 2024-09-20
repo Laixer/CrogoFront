@@ -127,7 +127,7 @@ export const reboot = function () {
 export const disconnect = function () {
   if (!_isConnected) {
     console.log('No connection to disconnect')
-    return
+    // return always send disconnect command
   }
   console.log('sending disconnect RTC command')
   sendCommand(new DisconnectRTCCommand())
