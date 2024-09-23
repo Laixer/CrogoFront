@@ -124,14 +124,14 @@ onBeforeUnmount(() => {
     <p class="Busy" v-if="sending">Bezig met het verbinding met {{ selectedUnitName }}...</p>
     <p class="Feedback mb-1" v-if="feedback">{{ feedback }}</p>
     <template v-if="!sending">
-      <label for="unit"> Selecteer een kraan </label>
+      <label for="unit">Vehicle</label>
       <select :disabled="sending" id="unit" name="unit" v-model="selectedUuid">
         <option v-for="unit in cargoUnits" :key="unit.shortUuid" :value="unit.uuid">
           {{ unit.name }} ({{ unit.shortUuid }})
         </option>
       </select>
 
-      <label class="mt-1" for="resolution">Selecteer een resolutie</label>
+      <label class="mt-1" for="resolution">Video resolution</label>
       <select
         :disabled="disableSizeSelection || sending"
         id="resolution"
@@ -141,11 +141,11 @@ onBeforeUnmount(() => {
         <option v-for="size of videoSizes" :key="size" :value="size">{{ size }}</option>
       </select>
 
-      <label class="mt-1" for="password">Wachtwoord</label>
+      <label class="mt-1" for="password">Passphrase</label>
       <input :disabled="sending" id="password" type="password" v-model="password" />
 
       <Button class="mt-1" small primary :disabled="isDisabled || sending" @click="handleClick"
-        >Verbinding maken</Button
+        >Connect to vehicle</Button
       >
     </template>
   </form>
