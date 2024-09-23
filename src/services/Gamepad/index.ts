@@ -32,6 +32,11 @@ export const connectController = function () {
   let driveLeftBackwards = false
   let driveRightBackwards = false
 
+  // When a controller disconnect we want to stop all motion
+  XBOXControlsInstance.subscribe('gamepad.disconnect', function () {
+    Cargo.stopAllMotion()
+  })
+
   XBOXControlsInstance.subscribe('gamepad.btn', function (event: ButtonEvent) {
     switch (event.btn) {
       case Button.B: {
@@ -85,7 +90,6 @@ export const connectController = function () {
 
   XBOXControlsInstance.subscribe('gamepad.axis', function (event: AxisEvent) {
     if (Object.prototype.hasOwnProperty.call(ActuatorByAxis, event.axis)) {
-
       switch (ActuatorByAxis[event.axis]) {
         case Actuator.BOOM: {
           // boom up is negative
@@ -150,7 +154,6 @@ export const connectController = function () {
           break
         }
       }
-
     }
   })
 

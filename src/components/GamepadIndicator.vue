@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { ref, type Ref } from 'vue'
+import { onBeforeUnmount, ref, type Ref } from 'vue'
 import Cargo from '@/services/cargo.js'
 import Gamepad from '@/components/icons/gamepad.vue'
 
 const connected: Ref<boolean> = ref(false)
 
-Cargo.PubSubService.subscribe('gamepad.connect', () => {
+const unsubscribeConnect = Cargo.PubSubService.subscribe('gamepad.connect', () => {
   console.log('gamepad connected')
   connected.value = true
 })
-Cargo.PubSubService.subscribe('gamepad.disconnect', () => {
+const unsubscribeDisconnect = Cargo.PubSubService.subscribe('gamepad.disconnect', () => {
   console.log('gamepad disconnected')
   connected.value = false
+})
+
+onBeforeUnmount(() => {
+  unsubscribeConnect()
+  unsubscribeDisconnect()
 })
 </script>
 

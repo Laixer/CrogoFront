@@ -22,49 +22,71 @@ const signalStrength: ComputedRef<number> = computed(() => {
   return tresholds.filter((treshold) => treshold > echoMS.value).length
 })
 
-Cargo.PubSubService.subscribe(`incoming.${MessageType.ECHO}`, (event: IncomingMessageEvent) => {
-  // TODO: create EchoMessageEvent
-  const message = event.message as Echo
+const unsubscribeIncoming = Cargo.PubSubService.subscribe(
+  `incoming.${MessageType.ECHO}`,
+  (event: IncomingMessageEvent) => {
+    // TODO: create EchoMessageEvent
+    const message = event.message as Echo
 
-  echoMS.value = Date.now() - Number(message.payload)
-})
+    echoMS.value = Date.now() - Number(message.payload)
+  }
+)
 
 /**
  * Clear the latency value upon diconnect
  */
-Cargo.PubSubService.subscribe('connection.connectionStateChange', (event: ConnectionStateEvent) => {
-  if (event.state && ['closed', 'disconnected', 'failed'].includes(event.state)) {
-    echoMS.value = 0
-    stopPing()
+const unsubscribeConnectionState = Cargo.PubSubService.subscribe(
+  'connection.connectionStateChange',
+  (event: ConnectionStateEvent) => {
+    if (event.state && ['closed', 'disconnected', 'failed'].includes(event.state)) {
+      echoMS.value = 0
+      stopPing()
+    } else {
+      startPing()
+    }
   }
-})
+)
 
-Cargo.PubSubService.subscribe('connection.channelStateChange', (event: ChannelStateEvent) => {
-  if (event.state && ['closed', 'closing'].includes(event.state)) {
-    echoMS.value = 0
-    stopPing()
+const unsubscribeChannelState = Cargo.PubSubService.subscribe(
+  'connection.channelStateChange',
+  (event: ChannelStateEvent) => {
+    if (event.state && ['closed', 'closing'].includes(event.state)) {
+      echoMS.value = 0
+      stopPing()
+    } else {
+      startPing()
+    }
   }
-})
+)
 
 const startPing = function startPing() {
-  intervalReferenceId = setInterval(() => {
-    Cargo.echo()
-  }, 1000)
+  if (!intervalReferenceId) {
+    intervalReferenceId = setInterval(() => {
+      Cargo.echo()
+    }, 1000)
+  }
 }
 const stopPing = function stopPing() {
   if (intervalReferenceId) {
     clearInterval(intervalReferenceId)
+    intervalReferenceId = undefined
   }
 }
 
 onBeforeMount(() => {
-  if (Cargo.isConnected()) {
-    startPing()
-  }
+  setTimeout(() => {
+    if (Cargo.isConnected()) {
+      startPing()
+    }
+  })
 })
 
 onBeforeUnmount(() => {
   stopPing()
+
+  unsubscribeIncoming()
+  unsubscribeConnectionState()
+  unsubscribeChannelState()
 })
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, type Ref } from 'vue'
+import { onBeforeUnmount, ref, type Ref } from 'vue'
 import Cargo from '@/services/cargo.js'
 import { MessageType } from '@/services/WebRTC/commands/index'
 import { Engine } from '@/services/WebRTC/commands/engine'
@@ -10,11 +10,18 @@ import type { IncomingMessageEvent } from '@/services/WebRTC/index.js'
 
 const RPM: Ref<number> = ref(0)
 
-Cargo.PubSubService.subscribe(`incoming.${MessageType.ENGINE}`, (event: IncomingMessageEvent) => {
-  // TODO: create EngineMessageEvent
-  const message = event.message as Engine
+const unsubscribeIncoming = Cargo.PubSubService.subscribe(
+  `incoming.${MessageType.ENGINE}`,
+  (event: IncomingMessageEvent) => {
+    // TODO: create EngineMessageEvent
+    const message = event.message as Engine
 
-  RPM.value = message.rpm
+    RPM.value = message.rpm
+  }
+)
+
+onBeforeUnmount(() => {
+  unsubscribeIncoming()
 })
 </script>
 

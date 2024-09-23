@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, type Ref, ref, watch } from 'vue'
 import Cargo from '@/services/cargo.js'
 
 import Ping from '@/components/Ping.vue'
@@ -10,46 +10,40 @@ import DisconnectButton from '@/components/DisconnectButton.vue'
 import StopMotionWarning from '@/components/StopMotionWarning.vue'
 import ConnectionWarning from '@/components/ConnectionWarning.vue'
 import GamepadIndicator from '@/components/GamepadIndicator.vue'
+import LoginModal from '@/components/LoginModal.vue'
+import Video from '@/components/Video.vue'
+import type { ConnectionStateEvent } from '@/services/WebRTC/index.js'
+import { useWindowFocus } from '@/utils/useFocus.js'
 
-const urlParams = new URLSearchParams(window.location.search)
-const instanceId = urlParams.get('id')
-console.log('Viewer - instance_id from url', instanceId)
-
+// Alternative UI, where UI elements are presented on top of video
 const enableOverlay = false
 
-// Woody
-// const instanceId = "d6d1a2db-52b9-4abb-8bea-f2d0537432e2"
+// Going to be false initially
+const isConnected: Ref<boolean> = ref(Cargo.isConnected())
 
-// Yorick test
-// const instanceId = "78adc7fc-6f60-4fc7-81ed-91396892f4a1"
-
-// Volvo
-// const instanceId = "38df5a6a-0b90-45f6-89eb-b831a3db555d"
-
-// setTimeout(() => {
-//   console.log('2000 ms na Viewer setup')
-// console.log('timeout')
-
-// Cargo.reboot()
-// Cargo.echo()
-// Cargo.engineRequestRPM(800)
-// Cargo.disconnect()
-// }, 2000)
+// Track changes in the connection state
+// TODO: Have 1 Cargo connection state (not connectionStateChange and channelStateChange)
+Cargo.PubSubService.subscribe('connection.connectionStateChange', (event: ConnectionStateEvent) => {
+  if (event.state) {
+    isConnected.value = !['closed', 'failed', 'disconnected'].includes(event.state)
+  }
+})
 
 try {
-  if (instanceId) {
-    await Cargo.connect(instanceId)
-  } else {
-    throw new Error('Missing instanceId')
-  }
+  await Cargo.init()
 } catch (err) {
-  console.log('ERR0R')
   console.log(err)
 }
 
-onMounted(() => {
-  const video = document.getElementById('remoteVideo')
-  Cargo.connectVideoElement(video as HTMLVideoElement)
+/**
+ * Stop all motion when tab goes out of focus
+ *  No resume on focus to avoid unexpected activity
+ */
+watch(useWindowFocus(), (focus) => {
+  if (!focus) {
+    console.log('Window out of focus - stop all motion')
+    Cargo.stopAllMotion()
+  }
 })
 
 onBeforeUnmount(() => {
@@ -62,12 +56,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="videoContainer">
-    <video id="remoteVideo" playsinline autoplay muted></video>
+  <LoginModal v-if="!isConnected" />
 
-    <div class="overlay flex-center flex column top bottom left right">
-      <ConnectionWarning />
-      <StopMotionWarning class="mt-1" />
+  <div v-else class="videoContainer">
+    <Video />
+    <div class="overlay flex column top bottom left">
+      <ConnectionWarning class="mt-1 ml-1" />
+      <StopMotionWarning class="mt-1 ml-1" />
     </div>
 
     <template v-if="enableOverlay">
@@ -103,6 +98,11 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
+html,
+body {
+  background-color: #032836;
+}
+
 .videoContainer {
   position: relative;
   display: flex;

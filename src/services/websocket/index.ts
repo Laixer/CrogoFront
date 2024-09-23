@@ -1,4 +1,5 @@
 import Debugger from '../Debugger'
+import { PubSubEvent, PubSubService } from '../PubSubService'
 import type { IWebSocketCommand } from './commands'
 import { addToQueue, handleResponseMessage } from './queue'
 
@@ -13,7 +14,16 @@ let WebSocketConnection: WebSocket | null = null
 /**
  * The unique connection id
  */
-const connectionId: number = Math.floor(100000 + Math.random() * 900000)
+let connectionId: number = Math.floor(100000 + Math.random() * 900000)
+
+export class WebSocketErrorEvent extends PubSubEvent {
+  message: string
+
+  constructor(message: string) {
+    super('WebSocketErrorEvent')
+    this.message = message
+  }
+}
 
 /**
  * Retrieve the unique connection id
@@ -49,13 +59,31 @@ export const establishWebSocketConnection = function establishWebSocketConnectio
   return new Promise<WebSocket>((resolve, reject) => {
     if (WebSocketConnection !== null) {
       Debugger.error('Websocket - connection already established')
+      console.log(WebSocketConnection)
 
       // TODO: Use isWebSocketConnectionAvailable to maybe re-open a closed connection?
       reject(new Error('Only one connection allowed'))
     }
 
-    WebSocketConnection = new WebSocket(`${ws_host}/app/${instanceId}/ws`)
+    // Set a new connection id
+    connectionId = Math.floor(100000 + Math.random() * 900000)
 
+    try {
+      WebSocketConnection = new WebSocket(`${ws_host}/app/${instanceId}/ws`)
+    } catch (err) {
+      PubSubService.emit(
+        'error.websocket',
+        new WebSocketErrorEvent('Failed to create a websocket connection')
+      )
+      WebSocketConnection = null
+      reject(err)
+      return
+    }
+
+    WebSocketConnection.onerror = (err) => {
+      console.log(err)
+      PubSubService.emit('error.websocket', new WebSocketErrorEvent('Websocket error'))
+    }
     WebSocketConnection.onclose = onClose
     WebSocketConnection.onmessage = handleResponseMessage
 
@@ -94,9 +122,19 @@ export const sendMessage = function sendMessage(message: object) {
   }
 }
 
+export const close = function close() {
+  console.log('Websocket - close connection')
+  if (isWebSocketConnectionAvailable()) {
+    getWebSocketConnection()?.close()
+  }
+
+  WebSocketConnection = null
+}
+
 /**
  *
  */
 const onClose = function onClose() {
+  // TODO: Keep in mind: new connection already established when event is received for previous connection
   Debugger.info('Websocket - connection closed')
 }

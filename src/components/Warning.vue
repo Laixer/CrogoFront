@@ -1,11 +1,12 @@
 <script setup lang="ts">
 defineProps({
-  label: { type: String }
+  label: { type: String },
+  muted: { type: Boolean, default: true }
 })
 </script>
 
 <template>
-  <div class="Warning">
+  <div class="Warning" :class="{ 'Warning--muted': muted }">
     {{ label }}
   </div>
 </template>
@@ -18,5 +19,10 @@ defineProps({
   font-weight: bold;
   padding: 1rem 4rem;
   background-color: #cc330050;
+}
+.Warning--muted {
+  border: #cc330080 2px solid;
+  font-size: 1rem;
+  padding: 0.15rem 2rem;
 }
 </style>

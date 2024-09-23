@@ -1,60 +1,141 @@
-import { initiateRTCConnection, send, connectVideoElement } from '@/services/WebRTC/index.js'
-import { establishWebSocketConnection, sendCommand } from '@/services/websocket/index.js'
+import {
+  initiateRTCConnection,
+  send,
+  connectVideoElement,
+  closeConnection as closeWebRTCConnection,
+  ConnectionStateEvent
+} from '@/services/WebRTC/index.js'
+import {
+  establishWebSocketConnection,
+  isWebSocketConnectionAvailable,
+  close as closeWebsocketConnection,
+  sendCommand
+} from '@/services/websocket/index.js'
 import { Engine } from './WebRTC/commands/engine'
 import { Control, ControlType } from './WebRTC/commands/controls'
 import { Actuator, Motion } from './WebRTC/commands/motion'
 import { Echo } from './WebRTC/commands/echo'
-import { RebootCommand, DisconnectRTCCommand } from './websocket/commands/state'
-import { connectController as connectGamePadController } from '@/services/Gamepad/index.js'
-import { PubSubService } from '@/services/PubSubService'
+import { RebootCommand } from './websocket/commands/state'
+import { connectController as setupGamepadController } from '@/services/Gamepad/index.js'
+import { PubSubEvent, PubSubService } from '@/services/PubSubService'
 
 let connectedUuid: string | null = null
 let _isConnected = false
 
+let initiated = false
+
+let connectionTimeout: NodeJS.Timeout
+
 /**
- * Establish a Websocket & RTC Connection to a specific Cargo unit
+ * TODO: States to keep track of
+ *
+ *  - websocket
+ *  - webrtc
+ *   - connection
+ *   - signal data channel
+ *   - command data channel
+ *   - video channel
+ *
+ *  - cargo
+ *   - init
+ *   - connect
+ *
+ *  - gamepad
  */
-export const connect = async function connect(uuid: string) {
+
+export class ConnectionErrorEvent extends PubSubEvent {
+  constructor() {
+    super('ConnectionErrorEvent')
+  }
+}
+
+export const init = async function init() {
+  // TODO: state: 'new', 'initiating', 'initiated', 'connecting', 'connected', 'disconnected'
+  if (initiated) {
+    console.log(`Cargo - already initiated to ${connectedUuid}`)
+    return
+  }
+
+  console.log('Cargo - setup gamepad')
+  // Connect the GamePad controller
+  setupGamepadController()
+
+  PubSubService.subscribe('connection.connectionStateChange', _registerDisconnect)
+  PubSubService.subscribe('connection.channelStateChange', _registerDisconnect)
+
+  initiated = true
+}
+
+/**
+ * Establish a RTC Connection to a specific Cargo unit
+ */
+export const connect = async function connect(uuid: string, password: string, resolution: string) {
   if (_isConnected) {
     console.log(`Cargo - is already connected`, connectedUuid)
     throw new Error(`Cargo - is already connected - ${connectedUuid}`)
   }
+  if (initiated !== true) {
+    throw new Error(`Cargo - Need to initiate first.`)
+  }
 
-  console.log('Cargo - connecting', uuid)
+  cancelConnection()
 
-  // initiateRTCConnection()
+  // Allow 10 seconds for creating a connection
+  connectionTimeout = setTimeout(() => {
+    if (!_isConnected) {
+      closeWebRTCConnection()
+
+      PubSubService.emit('error.connect', new ConnectionErrorEvent())
+    }
+  }, 10000)
+
+  if (isWebSocketConnectionAvailable()) {
+    console.log('Cargo - cleaning up previous websocket connection')
+    closeWebsocketConnection()
+  }
+
+  console.log('Cargo - connecting websocket')
   await establishWebSocketConnection({
     instanceId: uuid
   }).catch((err: Error) => {
     console.log('Cargo - failed to connect websocket')
     throw err
   })
-
   console.log('Cargo - websocket connected')
 
-  await initiateRTCConnection().catch((err: Error) => {
+  connectedUuid = uuid
+  console.log(`Cargo - init ${connectedUuid}`)
+
+  console.log('Cargo - connecting WebRTC', connectedUuid)
+
+  await initiateRTCConnection(password, resolution).catch((err: Error) => {
     console.log('Cargo - failed to connect WebRTC')
     throw err
   })
-
   console.log('Cargo - WebRTC connection established')
+
+  clearTimeout(connectionTimeout)
+
   _isConnected = true
-  connectedUuid = uuid
-
-  // Connect the GamePad controller
-  connectGamePadController()
-
-  PubSubService.subscribe('connection.connectionStateChange', _registerDisconnect)
-  PubSubService.subscribe('connection.channelStateChange', _registerDisconnect)
 }
 
-const _registerDisconnect = (state: string) => {
-  if (['closed', 'closing', 'disconnected', 'failed'].includes(state)) {
+export const cancelConnection = () => {
+  if (connectionTimeout) {
+    clearTimeout(connectionTimeout)
+    closeWebRTCConnection()
+    closeWebsocketConnection()
     _isConnected = false
   }
 }
 
-export const isConnected = function () {
+const _registerDisconnect = (event: ConnectionStateEvent) => {
+  if (event.state && ['closed', 'closing', 'disconnected', 'failed'].includes(event.state)) {
+    closeWebsocketConnection()
+    _isConnected = false
+  }
+}
+
+export const isConnected = function (): boolean {
   return !!_isConnected
 }
 
@@ -119,13 +200,14 @@ export const reboot = function () {
   sendCommand(new RebootCommand())
 }
 
-export const disconnect = function () {
+export const disconnect = function disconnect() {
   if (!_isConnected) {
     console.log('No connection to disconnect')
     // return always send disconnect command
   }
   console.log('sending disconnect RTC command')
-  sendCommand(new DisconnectRTCCommand())
+  // sendCommand(new DisconnectRTCCommand())
+  closeWebRTCConnection()
 }
 
 export const stopAllMotion = function () {
@@ -182,7 +264,9 @@ export const motionChange = function (actuator: Actuator, value: number) {
 }
 
 export default {
+  init,
   connect,
+  cancelConnection,
   isConnected,
   stopAllMotion,
   resumeAllMotion,

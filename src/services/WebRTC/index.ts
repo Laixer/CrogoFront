@@ -1,4 +1,4 @@
-import { disconnect } from '../cargo'
+// import { disconnect } from '../cargo'
 import { PubSubEvent, PubSubService } from '../PubSubService'
 // import Debugger from "../Debugger";
 import { sendCommand as sendWebsocketCommand } from '../websocket'
@@ -47,11 +47,16 @@ export class ConnectionStateEvent extends PubSubEvent {
 }
 
 export class ChannelStateEvent extends PubSubEvent {
+  channeltype: 'media' | 'data' | undefined
   state: RTCDtlsTransportState | 'closing' | undefined
 
-  constructor(state: RTCDtlsTransportState | 'closing' | undefined) {
+  constructor(
+    state: RTCDtlsTransportState | 'closing' | undefined,
+    channeltype: 'media' | 'data' | undefined
+  ) {
     super('ChannelStateEvent')
     this.state = state
+    this.channeltype = channeltype
   }
 
   // TODO: isfailed(), etc...
@@ -81,14 +86,17 @@ export const onConnectionStateChange = function onConnectionStateChange() {
   )
 }
 
-export const initiateRTCConnection = function initiateRTCConnection() {
+export const initiateRTCConnection = function initiateRTCConnection(
+  password: string,
+  resolution: string
+) {
   // Register all incoming message types as a channel of the "incoming" group
   Object.keys(lastReceivedMessagesByType).forEach((messageType) => {
-    PubSubService.registerChannel({ identifier: `incoming.${messageType}` })
+    PubSubService.registerChannel({ identifier: `incoming.${messageType}` }, true)
   })
   // Register the 2 connection channels as the 'connection' group
-  PubSubService.registerChannel({ identifier: 'connection.connectionStateChange' })
-  PubSubService.registerChannel({ identifier: 'connection.channelStateChange' })
+  PubSubService.registerChannel({ identifier: 'connection.connectionStateChange' }, true)
+  PubSubService.registerChannel({ identifier: 'connection.channelStateChange' }, true)
 
   return new Promise<RTCPeerConnection>((resolve, reject) => {
     try {
@@ -105,6 +113,7 @@ export const initiateRTCConnection = function initiateRTCConnection() {
           console.error('WebRTC video - missing stream data')
         }
       }
+
       // create the command channel
       // Command channel is for 2 way communication
       CommandChannel = WebRTCConnection.createDataChannel('command')
@@ -115,12 +124,15 @@ export const initiateRTCConnection = function initiateRTCConnection() {
       CommandChannel.onclosing = (event) => {
         console.log('CommandChannel closing', event, Date.now())
 
-        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closing'))
+        PubSubService.emit(
+          'connection.channelStateChange',
+          new ChannelStateEvent('closing', 'data')
+        )
       }
       CommandChannel.onclose = (event) => {
-        console.log('CommandChannel close', event, Date.now())
+        console.log('CommandChannel closed', event, Date.now())
 
-        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closed'))
+        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closed', 'data'))
       }
 
       // TODO: separate signal on receive message
@@ -136,12 +148,15 @@ export const initiateRTCConnection = function initiateRTCConnection() {
       SignalChannel.onclosing = (event) => {
         console.log('SignalChannel closing', event, Date.now())
 
-        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closing'))
+        PubSubService.emit(
+          'connection.channelStateChange',
+          new ChannelStateEvent('closing', 'data')
+        )
       }
       SignalChannel.onclose = (event) => {
-        console.log('SignalChannel close', event, Date.now())
+        console.log('SignalChannel closed', event, Date.now())
 
-        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closed'))
+        PubSubService.emit('connection.channelStateChange', new ChannelStateEvent('closed', 'data'))
       }
 
       // Resolve the promise when the connection is established
@@ -167,12 +182,18 @@ export const initiateRTCConnection = function initiateRTCConnection() {
 
                 // Emit video connection state changes
                 if (receiver.transport) {
+                  console.log('transport state', receiver.transport.state, Date.now())
+                  PubSubService.emit(
+                    'connection.channelStateChange',
+                    new ChannelStateEvent(receiver.transport.state, 'media')
+                  )
+
                   receiver.transport.onstatechange = function (state) {
                     console.log('transport state', state, Date.now())
 
                     PubSubService.emit(
                       'connection.channelStateChange',
-                      new ChannelStateEvent(this.state)
+                      new ChannelStateEvent(this.state, 'media')
                     )
                   }
                 }
@@ -232,7 +253,7 @@ export const initiateRTCConnection = function initiateRTCConnection() {
         console.log('WebRTC - local description', WebRTCConnection?.localDescription)
 
         // Setup RTC through the websocket connection
-        sendWebsocketCommand(new RTCSetupCommand(offer))
+        sendWebsocketCommand(new RTCSetupCommand(offer, password, resolution))
       })
     } catch (err) {
       console.log('WebRTC - failure while connecting', err)
@@ -404,9 +425,9 @@ export const setRemoteDescription = async function setRemoteDescription(
 
     await WebRTC.setRemoteDescription(description)
   } catch (err) {
-    console.log('WebRTC - failed to set remote connection', description)
+    console.log('WebRTC - failed to set remote description', description)
 
-    disconnect()
+    closeConnection()
     throw err
   }
 }
@@ -415,4 +436,47 @@ export const connectVideoElement = (video: HTMLVideoElement) => {
   if (VideoStream) {
     video.srcObject = VideoStream
   }
+}
+
+/**
+ * Close the WebRTC connection
+ */
+export const closeConnection = function closeConnection() {
+  const connection = getWebRTCConnection()
+
+  // if (connection?.connectionState === 'failed') {
+  //   PubSubService.emit('connection.connectionStateChange', new ConnectionStateEvent('closed'))
+
+  //   setTimeout(() => {
+  //     WebRTCConnection = null
+  //     console.log('WebRTC connection instance cleared after failed connection')
+  //   })
+  //   return
+  // }
+
+  // if (connection?.connectionState !== 'connected') {
+  //   console.error(
+  //     `Current WebRTC connection state: ${connection?.connectionState}. Cannot close the connection at this time.`
+  //   )
+  //   return
+  // }
+
+  const unsubscribe = PubSubService.subscribe(
+    'connection.connectionStateChange',
+    function (event: ConnectionStateEvent) {
+      // Clean up the connection after it has been closed and all other subscribers have had a chance to act
+      if (event.state === 'closed') {
+        setTimeout(() => {
+          WebRTCConnection = null
+
+          // Unsubscribe, to avoid multiple 'onclose' subscriptions
+          unsubscribe()
+        }, 1)
+      }
+    }
+  )
+
+  connection?.close()
+
+  PubSubService.emit('connection.connectionStateChange', new ConnectionStateEvent('closed'))
 }

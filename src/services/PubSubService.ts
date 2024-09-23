@@ -120,7 +120,7 @@ export class PubSub {
   /**
    * Register a channel
    */
-  registerChannel(channel: Channel): PubSub {
+  registerChannel(channel: Channel, silent: boolean = false): PubSub {
     if (!channel.identifier) {
       throw new Error('A channel requires an identifier')
     }
@@ -128,6 +128,10 @@ export class PubSub {
     channel.identifier = this.cleanChannelIdentifier(channel.identifier)
 
     if (this.hasChannel(channel.identifier)) {
+      // silently ignore repeat attempts at registering this channel
+      if (silent) {
+        return this
+      }
       throw new Error('Channel is already registered')
     }
 

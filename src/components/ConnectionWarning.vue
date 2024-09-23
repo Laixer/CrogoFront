@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 import Warning from '@/components/Warning.vue'
 import Cargo from '@/services/cargo.js'
 import type { ChannelStateEvent, ConnectionStateEvent } from '@/services/WebRTC/index.js'
@@ -19,7 +19,7 @@ const label = ref('CONNECTION LOST')
 let timeoutReference: ReturnType<typeof setTimeout> | undefined = undefined
 
 // Subscribe to all message types, before ignoring duplicates
-Cargo.PubSubService.subscribe('incoming', () => {
+const unsubscribeIncoming = Cargo.PubSubService.subscribe('incoming', () => {
   // Clear the warning when a message arrives.
   // This typically creates a flashing effect in case the unstable connection warning is triggered
   show.value = false
@@ -38,31 +38,43 @@ Cargo.PubSubService.subscribe('incoming', () => {
 })
 
 // Possible states: "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new"
-Cargo.PubSubService.subscribe('connection.connectionStateChange', (event: ConnectionStateEvent) => {
-  console.log('Subscribe connection warning', event.state)
+const unsubscribeConnectionState = Cargo.PubSubService.subscribe(
+  'connection.connectionStateChange',
+  (event: ConnectionStateEvent) => {
+    console.log('Subscribe connection warning', event.state)
 
-  if (event.state && ['closed', 'disconnected', 'failed'].includes(event.state)) {
-    // Upon connection failure, the connection unstable notice is cancelled
-    if (timeoutReference) {
-      clearTimeout(timeoutReference)
+    if (event.state && ['closed', 'disconnected', 'failed'].includes(event.state)) {
+      // Upon connection failure, the connection unstable notice is cancelled
+      if (timeoutReference) {
+        clearTimeout(timeoutReference)
+      }
+
+      label.value = 'CONNECTION LOST'
+      show.value = true
     }
-
-    label.value = 'CONNECTION LOST'
-    show.value = true
   }
-})
+)
 
 // (current) Possible states: "closed" or "closing"
-Cargo.PubSubService.subscribe('channelStateChange', (event: ChannelStateEvent) => {
-  if (event.state && ['closed', 'closing'].includes(event.state)) {
-    // Upon connection failure, the connection unstable notice is cancelled
-    if (timeoutReference) {
-      clearTimeout(timeoutReference)
-    }
+const unsubscribeChannelState = Cargo.PubSubService.subscribe(
+  'connection.channelStateChange',
+  (event: ChannelStateEvent) => {
+    if (event.state && ['closed', 'closing'].includes(event.state)) {
+      // Upon connection failure, the connection unstable notice is cancelled
+      if (timeoutReference) {
+        clearTimeout(timeoutReference)
+      }
 
-    label.value = 'CONNECTION LOST'
-    show.value = true
+      label.value = 'CONNECTION LOST'
+      show.value = true
+    }
   }
+)
+
+onBeforeUnmount(() => {
+  unsubscribeIncoming()
+  unsubscribeConnectionState()
+  unsubscribeChannelState()
 })
 </script>
 
