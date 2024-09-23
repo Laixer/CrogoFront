@@ -58,7 +58,8 @@ class Crogo {
 
     console.log('Cargo - websocket connected')
 
-    await initiateRTCConnection()
+    // TODO: Add password & video resolution
+    await initiateRTCConnection('', '')
       .then((WebRCTConnection) => {
         this.WebRCTConnection = WebRCTConnection
       })

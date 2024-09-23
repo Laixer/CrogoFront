@@ -24,7 +24,7 @@ let _isConnected = false
 
 let initiated = false
 
-let connectionTimeout: NodeJS.Timeout
+let connectionTimeout: ReturnType<typeof setTimeout>
 
 /**
  * TODO: States to keep track of
