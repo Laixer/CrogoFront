@@ -20,6 +20,7 @@ defineProps({
   padding: 1rem 4rem;
   background-color: #cc330050;
 }
+
 .Warning--muted {
   border: #cc330080 2px solid;
   font-size: 1rem;

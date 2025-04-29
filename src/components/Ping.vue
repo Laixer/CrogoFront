@@ -104,6 +104,7 @@ onBeforeUnmount(() => {
   position: relative;
   color: white;
 }
+
 .Ping__figure {
   position: absolute;
   top: 0;

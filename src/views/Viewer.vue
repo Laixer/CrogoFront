@@ -112,6 +112,7 @@ body {
   max-height: 100vh;
   overflow: visible;
 }
+
 .sidebar {
   right: -11rem;
 }
@@ -124,6 +125,7 @@ body {
 .absolute {
   position: absolute;
 }
+
 .relative {
   position: relative;
 }
@@ -131,15 +133,19 @@ body {
 .top {
   top: 0;
 }
+
 .bottom {
   bottom: 0;
 }
+
 .left {
   left: 0;
 }
+
 .right {
   right: 0;
 }
+
 .center {
   margin: auto;
 }
@@ -151,18 +157,23 @@ body {
 .flex {
   display: flex;
 }
+
 .flex.inline {
   flex-direction: row;
 }
+
 .flex.column {
   flex-direction: column;
 }
+
 .flex.justify-end {
   justify-content: flex-end;
 }
+
 .flex.align-end {
   align-items: flex-end;
 }
+
 .flex-grow {
   flex-grow: 1;
 }

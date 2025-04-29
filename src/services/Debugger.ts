@@ -19,7 +19,7 @@ class DebuggerClass {
 
   get debug() {
     if (this.level > DebuggerLevels.DEBUG) {
-      return () => {}
+      return () => { }
     }
 
     return console.debug.bind(console)
@@ -27,7 +27,7 @@ class DebuggerClass {
 
   get log() {
     if (this.level > DebuggerLevels.LOG) {
-      return () => {}
+      return () => { }
     }
 
     return console.log.bind(console)
@@ -35,7 +35,7 @@ class DebuggerClass {
 
   get info() {
     if (this.level > DebuggerLevels.INFO) {
-      return () => {}
+      return () => { }
     }
 
     return console.info.bind(console)
@@ -43,7 +43,7 @@ class DebuggerClass {
 
   get warn() {
     if (this.level > DebuggerLevels.WARN) {
-      return () => {}
+      return () => { }
     }
 
     return console.warn.bind(console)
@@ -51,7 +51,7 @@ class DebuggerClass {
 
   get error() {
     if (this.level > DebuggerLevels.ERROR) {
-      return () => {}
+      return () => { }
     }
 
     return console.error.bind(console)

@@ -24,7 +24,7 @@ export interface PubSubOptions {
   channelDefaults?: ChannelDefaults
 }
 
-export class PubSubEvent extends Event {}
+export class PubSubEvent extends Event { }
 
 export class PubSub {
   /**
